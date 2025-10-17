@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Chirp — Profil Destekli</title>
+<title>Chirp — Profil Destekli (Beğeni / Yorum / Silme)</title>
 <style>
   :root{--bg:#0f1724;--card:#0b1220;--accent:#1d9bf0;--muted:#94a3b8;--text:#e6eef8}
   *{box-sizing:border-box}
@@ -31,8 +31,11 @@
   .name{font-weight:600;color:var(--text)}
   .time{font-size:12px;color:var(--muted)}
   .delete-btn{position:absolute;top:8px;right:8px;background:none;border:none;color:#ff8a8a;cursor:pointer;font-size:14px}
-  .like{background:transparent;border:0;color:var(--muted);cursor:pointer}
+  .like,.comment-btn{background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:13px}
   .like.liked{color:#ff7b7b}
+  .comments{margin-top:8px}
+  .comment{margin-left:48px;margin-top:6px;padding-left:8px;border-left:1px solid rgba(255,255,255,0.06)}
+  .comment-input{margin-left:48px;margin-top:8px}
   .small{font-size:13px;color:var(--muted)}
   .error{color:#ff8a8a}
   @media(min-width:900px){ .layout{display:grid;grid-template-columns:320px 1fr; gap:16px} }
@@ -41,7 +44,7 @@
 <body>
 <div class="app">
   <header>
-    <h1>Chirp — Profil Destekli Demo</h1>
+    <h1>Chirp — Profil Destekli</h1>
     <div id="user-area" class="small"></div>
   </header>
 
@@ -124,13 +127,14 @@
   } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
   import {
     getFirestore, collection, addDoc, serverTimestamp,
-    query, orderBy, onSnapshot, doc, deleteDoc
+    query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc
   } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // elements
   const btnShowRegister = document.getElementById('btn-show-register');
   const btnShowLogin = document.getElementById('btn-show-login');
   const registerPanel = document.getElementById('register');
@@ -152,61 +156,77 @@
   const inEmail = document.getElementById('in-email');
   const inPass = document.getElementById('in-pass');
 
-  // Kayıt / Giriş arası geçiş
+  // toggle forms
   btnShowRegister.onclick = () => { signedOut.style.display = 'none'; registerPanel.style.display = 'block'; };
   btnShowLogin.onclick = () => { signedOut.style.display = 'block'; registerPanel.style.display = 'none'; };
 
-  // Kayıt
+  // register
   document.getElementById('btn-register').onclick = async () => {
     regMsg.textContent = '';
     try {
-      const cred = await createUserWithEmailAndPassword(auth, regEmail.value, regPass.value);
-      await updateProfile(cred.user, { displayName: regName.value, photoURL: regPhoto.value || "" });
+      const cred = await createUserWithEmailAndPassword(auth, regEmail.value.trim(), regPass.value);
+      await updateProfile(cred.user, { displayName: regName.value.trim(), photoURL: regPhoto.value.trim() || "" });
       regMsg.textContent = "Kayıt başarılı! Giriş yapıldı.";
     } catch(e){ regMsg.textContent = "Hata: "+e.message; regMsg.className='error'; }
   };
 
-  // Giriş
+  // login
   document.getElementById('btn-login').onclick = async () => {
+    authMsg.textContent = '';
     try {
-      await signInWithEmailAndPassword(auth, inEmail.value, inPass.value);
+      await signInWithEmailAndPassword(auth, inEmail.value.trim(), inPass.value);
     } catch(e){ authMsg.textContent = "Giriş hatası: "+e.message; authMsg.className='error'; }
   };
 
-  // Çıkış
-  document.getElementById('btn-logout').onclick = () => {
-    signOut(auth);
-  };
+  // logout
+  document.getElementById('btn-logout').onclick = () => signOut(auth);
 
-  // Gönderi oluştur
+  // create post
   btnPost.onclick = async () => {
+    postMsg.textContent = '';
     const txt = txtPost.value.trim();
     const user = auth.currentUser;
-    if (!user || !txt) return;
-    await addDoc(collection(db, "posts"), {
-      uid: user.uid,
-      name: user.displayName || "Anonim",
-      photo: user.photoURL || "",
-      text: txt,
-      createdAt: serverTimestamp()
-    });
-    txtPost.value = "";
+    if (!user) { postMsg.textContent = 'Önce giriş yapmalısınız.'; postMsg.className='error'; return; }
+    if (!txt) { postMsg.textContent = 'Boş gönderi gönderilemez.'; postMsg.className='error'; return; }
+    try {
+      await addDoc(collection(db, "posts"), {
+        uid: user.uid,
+        name: user.displayName || "Anonim",
+        photo: user.photoURL || "",
+        text: txt,
+        createdAt: serverTimestamp(),
+        likes: [],
+        comments: []
+      });
+      txtPost.value = "";
+      postMsg.textContent = 'Gönderildi.'; postMsg.className='small';
+      setTimeout(()=>postMsg.textContent='',1200);
+    } catch(e) {
+      postMsg.textContent = 'Gönderme hatası: '+e.message; postMsg.className='error';
+    }
   };
 
-  // Realtime feed
-  const postsQuery = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+  // realtime feed (render)
+  const postsQuery = query(collection(db, "posts"), orderBy("createdAt","desc"));
   onSnapshot(postsQuery, (snap)=>{
     feed.innerHTML = "";
-    const user = auth.currentUser;
-    snap.forEach(d=>{
-      const data = d.data();
-      const id = d.id;
+    const currentUser = auth.currentUser; // snapshot render time
+    snap.forEach(docSnap=>{
+      const data = docSnap.data();
+      const id = docSnap.id;
       const avatar = data.photo || "https://ui-avatars.com/api/?name=" + encodeURIComponent(data.name || "A");
       const time = data.createdAt?.toDate().toLocaleString() || "";
-      const div = document.createElement("div");
-      div.className = "post";
+      const likesCount = Array.isArray(data.likes) ? data.likes.length : 0;
+      const comments = Array.isArray(data.comments) ? data.comments : [];
+
+      const div = document.createElement('div');
+      div.className = 'post';
+      // Buttons: like/comment/delete (delete shown only if currentUser && owner)
+      const isOwner = currentUser && (currentUser.uid === data.uid);
+      const liked = currentUser && Array.isArray(data.likes) && data.likes.includes(currentUser.uid);
+
       div.innerHTML = `
-        <button class="delete-btn" style="display:${user && user.uid === data.uid ? 'block':'none'}">🗑</button>
+        ${isOwner ? `<button class="delete-btn" data-id="${id}">🗑</button>` : ''}
         <div class="meta">
           <img src="${avatar}" class="avatar">
           <div>
@@ -215,36 +235,108 @@
           </div>
         </div>
         <div style="margin:8px 0">${escapeHtml(data.text)}</div>
+
+        <div class="row small" style="gap:12px;align-items:center">
+          <button class="like ${liked ? 'liked':''}" data-id="${id}">❤ <span class="like-count">${likesCount}</span></button>
+          <button class="comment-btn" data-id="${id}">💬 <span class="comment-count">${comments.length}</span></button>
+        </div>
+
+        <div class="comments">
+          ${comments.map(c => `<div class="comment"><b>${escapeHtml(c.name)}:</b> ${escapeHtml(c.text)}</div>`).join('')}
+          <div class="comment-input">
+            <input data-comment-id="${id}" placeholder="Yorum yaz ve Enter'a bas..." style="width:100%;padding:8px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:var(--text)">
+          </div>
+        </div>
       `;
-      const del = div.querySelector('.delete-btn');
-      if (del) del.onclick = async () => {
-        if (confirm("Bu gönderiyi silmek istiyor musun?")) {
-          await deleteDoc(doc(db, "posts", id));
-        }
-      };
+
+      // attach button handlers for delete/like/comment via event delegation below
       feed.appendChild(div);
     });
     feedStatus.textContent = "Güncel";
+  }, err => {
+    feedStatus.textContent = "Bağlantı hatası";
+    console.error('snapshot err', err);
   });
 
-  // Kullanıcı durumu
-  onAuthStateChanged(auth, user=>{
-    if (user){
-      composerCard.style.display = 'block';
-      userArea.innerHTML = `
-        <img src="${user.photoURL || 'https://ui-avatars.com/api/?name='+encodeURIComponent(user.displayName||'A')}" class="avatar" style="width:25px;height:25px;vertical-align:middle;margin-right:5px">
-        ${escapeHtml(user.displayName || 'Anonim')} 
-        <button class="btn ghost" style="margin-left:8px;padding:4px 8px;font-size:12px" id="mini-logout">Çık</button>
-      `;
-      document.getElementById('mini-logout').onclick = () => signOut(auth);
-      composerWho.textContent = user.displayName || "Anonim";
-    } else {
-      composerCard.style.display = 'none';
-      userArea.textContent = "Giriş yapılmadı";
+  // Delegated event handling for feed: like, delete, comment-button, and Enter on comment inputs
+  feed.addEventListener('click', async (ev) => {
+    const el = ev.target;
+    const user = auth.currentUser;
+    if (!user) { alert('Lütfen önce giriş yapın.'); return; }
+
+    // Like button (or inner span)
+    const likeBtn = el.closest('.like');
+    if (likeBtn) {
+      const id = likeBtn.dataset.id;
+      const postRef = doc(db, 'posts', id);
+      // If already liked -> remove, else add
+      if (likeBtn.classList.contains('liked')) {
+        await updateDoc(postRef, { likes: arrayRemove(user.uid) });
+      } else {
+        await updateDoc(postRef, { likes: arrayUnion(user.uid) });
+      }
+      return;
+    }
+
+    // Delete button
+    const delBtn = el.closest('.delete-btn');
+    if (delBtn) {
+      const id = delBtn.dataset.id;
+      if (!confirm('Bu gönderiyi silmek istiyor musun?')) return;
+      try {
+        await deleteDoc(doc(db, 'posts', id));
+      } catch (e) {
+        alert('Silme hatası: ' + e.message);
+      }
+      return;
+    }
+
+    // Comment button (focus input)
+    const cBtn = el.closest('.comment-btn');
+    if (cBtn) {
+      const id = cBtn.dataset.id;
+      const input = feed.querySelector(`input[data-comment-id="${id}"]`);
+      if (input) input.focus();
+      return;
     }
   });
 
-  function escapeHtml(s){return s ? s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;") : "";}
+  // Enter ile yorum gönderme (keydown)
+  feed.addEventListener('keydown', async (ev) => {
+    if (ev.key !== 'Enter') return;
+    const el = ev.target;
+    if (!el.dataset || !el.dataset.commentId) return;
+    ev.preventDefault();
+    const id = el.dataset.commentId;
+    const text = el.value.trim();
+    const user = auth.currentUser;
+    if (!user) { alert('Lütfen giriş yapın.'); return; }
+    if (!text) return;
+    const postRef = doc(db, 'posts', id);
+    try {
+      await updateDoc(postRef, { comments: arrayUnion({ uid: user.uid, name: user.displayName || 'Anonim', text }) });
+      el.value = '';
+    } catch (e) {
+      alert('Yorum hatası: ' + e.message);
+    }
+  });
+
+  // auth state
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      composerCard.style.display = 'block';
+      composerWho.textContent = user.displayName || 'Anonim';
+      userArea.innerHTML = `<img src="${user.photoURL || 'https://ui-avatars.com/api/?name='+encodeURIComponent(user.displayName||'A')}" class="avatar" style="width:28px;height:28px;vertical-align:middle;margin-right:8px"> ${escapeHtml(user.displayName || 'Anonim')} <button id="mini-logout" class="btn ghost" style="margin-left:8px;padding:6px 8px;font-size:12px">Çık</button>`;
+      const mini = document.getElementById('mini-logout');
+      if (mini) mini.onclick = () => signOut(auth);
+    } else {
+      composerCard.style.display = 'none';
+      userArea.textContent = 'Giriş yapılmadı';
+    }
+  });
+
+  function escapeHtml(s){ return s ? s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;") : ""; }
 </script>
 </body>
 </html>
+
