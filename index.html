@@ -25,11 +25,12 @@
   .col{display:flex;flex-direction:column;gap:8px}
   .feed{display:flex;flex-direction:column;gap:10px}
   .post{padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);
-    background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+    background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);position:relative}
   .meta{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
   .avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.1)}
   .name{font-weight:600;color:var(--text)}
   .time{font-size:12px;color:var(--muted)}
+  .delete-btn{position:absolute;top:8px;right:8px;background:none;border:none;color:#ff8a8a;cursor:pointer;font-size:14px}
   .like{background:transparent;border:0;color:var(--muted);cursor:pointer}
   .like.liked{color:#ff7b7b}
   .small{font-size:13px;color:var(--muted)}
@@ -123,7 +124,7 @@
   } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
   import {
     getFirestore, collection, addDoc, serverTimestamp,
-    query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove
+    query, orderBy, onSnapshot, doc, deleteDoc
   } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
   const app = initializeApp(firebaseConfig);
@@ -144,7 +145,6 @@
   const postMsg = document.getElementById('post-msg');
   const authMsg = document.getElementById('auth-msg');
   const regMsg = document.getElementById('reg-msg');
-
   const regName = document.getElementById('reg-name');
   const regPhoto = document.getElementById('reg-photo');
   const regEmail = document.getElementById('reg-email');
@@ -152,26 +152,33 @@
   const inEmail = document.getElementById('in-email');
   const inPass = document.getElementById('in-pass');
 
+  // Kayıt / Giriş arası geçiş
   btnShowRegister.onclick = () => { signedOut.style.display = 'none'; registerPanel.style.display = 'block'; };
   btnShowLogin.onclick = () => { signedOut.style.display = 'block'; registerPanel.style.display = 'none'; };
 
+  // Kayıt
   document.getElementById('btn-register').onclick = async () => {
     regMsg.textContent = '';
     try {
       const cred = await createUserWithEmailAndPassword(auth, regEmail.value, regPass.value);
       await updateProfile(cred.user, { displayName: regName.value, photoURL: regPhoto.value || "" });
-      regMsg.textContent = "Kayıt başarılı!";
+      regMsg.textContent = "Kayıt başarılı! Giriş yapıldı.";
     } catch(e){ regMsg.textContent = "Hata: "+e.message; regMsg.className='error'; }
   };
 
+  // Giriş
   document.getElementById('btn-login').onclick = async () => {
     try {
       await signInWithEmailAndPassword(auth, inEmail.value, inPass.value);
     } catch(e){ authMsg.textContent = "Giriş hatası: "+e.message; authMsg.className='error'; }
   };
 
-  document.getElementById('btn-logout').onclick = () => signOut(auth);
+  // Çıkış
+  document.getElementById('btn-logout').onclick = () => {
+    signOut(auth);
+  };
 
+  // Gönderi oluştur
   btnPost.onclick = async () => {
     const txt = txtPost.value.trim();
     const user = auth.currentUser;
@@ -181,22 +188,25 @@
       name: user.displayName || "Anonim",
       photo: user.photoURL || "",
       text: txt,
-      createdAt: serverTimestamp(),
-      likes: []
+      createdAt: serverTimestamp()
     });
     txtPost.value = "";
   };
 
+  // Realtime feed
   const postsQuery = query(collection(db, "posts"), orderBy("createdAt", "desc"));
   onSnapshot(postsQuery, (snap)=>{
     feed.innerHTML = "";
+    const user = auth.currentUser;
     snap.forEach(d=>{
       const data = d.data();
+      const id = d.id;
       const avatar = data.photo || "https://ui-avatars.com/api/?name=" + encodeURIComponent(data.name || "A");
       const time = data.createdAt?.toDate().toLocaleString() || "";
       const div = document.createElement("div");
       div.className = "post";
       div.innerHTML = `
+        <button class="delete-btn" style="display:${user && user.uid === data.uid ? 'block':'none'}">🗑</button>
         <div class="meta">
           <img src="${avatar}" class="avatar">
           <div>
@@ -206,14 +216,27 @@
         </div>
         <div style="margin:8px 0">${escapeHtml(data.text)}</div>
       `;
+      const del = div.querySelector('.delete-btn');
+      if (del) del.onclick = async () => {
+        if (confirm("Bu gönderiyi silmek istiyor musun?")) {
+          await deleteDoc(doc(db, "posts", id));
+        }
+      };
       feed.appendChild(div);
     });
+    feedStatus.textContent = "Güncel";
   });
 
+  // Kullanıcı durumu
   onAuthStateChanged(auth, user=>{
     if (user){
       composerCard.style.display = 'block';
-      userArea.innerHTML = `<img src="${user.photoURL || 'https://ui-avatars.com/api/?name='+encodeURIComponent(user.displayName||'A')}" class="avatar" style="width:25px;height:25px;vertical-align:middle;margin-right:5px"> ${escapeHtml(user.displayName || 'Anonim')}`;
+      userArea.innerHTML = `
+        <img src="${user.photoURL || 'https://ui-avatars.com/api/?name='+encodeURIComponent(user.displayName||'A')}" class="avatar" style="width:25px;height:25px;vertical-align:middle;margin-right:5px">
+        ${escapeHtml(user.displayName || 'Anonim')} 
+        <button class="btn ghost" style="margin-left:8px;padding:4px 8px;font-size:12px" id="mini-logout">Çık</button>
+      `;
+      document.getElementById('mini-logout').onclick = () => signOut(auth);
       composerWho.textContent = user.displayName || "Anonim";
     } else {
       composerCard.style.display = 'none';
