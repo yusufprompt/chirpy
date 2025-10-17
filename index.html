@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Chirp — Profil Destekli</title>
+<style>
+  :root{--bg:#0f1724;--card:#0b1220;--accent:#1d9bf0;--muted:#94a3b8;--text:#e6eef8}
+  *{box-sizing:border-box}
+  body{font-family:Inter,Segoe UI,Roboto,Arial; margin:0; min-height:100vh;
+    background:linear-gradient(180deg,#071024 0%, #0b1220 100%);
+    color:var(--text); display:flex; align-items:flex-start; justify-content:center; padding:28px;}
+  .app{width:100%;max-width:920px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  h1{font-size:20px;margin:0}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    padding:16px;border-radius:12px; box-shadow:0 6px 24px rgba(2,6,23,0.6); margin-bottom:14px}
+  input,textarea,button{font:inherit}
+  input,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);
+    background:transparent;color:var(--text)}
+  textarea{min-height:80px;resize:vertical}
+  .btn{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:9px;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+  .row{display:flex;gap:12px;align-items:center}
+  .col{display:flex;flex-direction:column;gap:8px}
+  .feed{display:flex;flex-direction:column;gap:10px}
+  .post{padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);
+    background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+  .meta{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+  .avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.1)}
+  .name{font-weight:600;color:var(--text)}
+  .time{font-size:12px;color:var(--muted)}
+  .like{background:transparent;border:0;color:var(--muted);cursor:pointer}
+  .like.liked{color:#ff7b7b}
+  .small{font-size:13px;color:var(--muted)}
+  .error{color:#ff8a8a}
+  @media(min-width:900px){ .layout{display:grid;grid-template-columns:320px 1fr; gap:16px} }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Chirp — Profil Destekli Demo</h1>
+    <div id="user-area" class="small"></div>
+  </header>
+
+  <div class="layout">
+    <!-- Sol: Giriş -->
+    <div>
+      <div class="card" id="auth-card">
+        <div id="auth-forms">
+          <div id="signed-out">
+            <div class="col">
+              <input id="in-email" placeholder="E-posta" type="email">
+              <input id="in-pass" placeholder="Şifre" type="password">
+              <div class="row">
+                <button class="btn" id="btn-login">Giriş Yap</button>
+                <button class="btn ghost" id="btn-show-register">Kayıt Ol</button>
+              </div>
+              <div id="auth-msg" class="small"></div>
+            </div>
+          </div>
+
+          <div id="register" style="display:none">
+            <div class="col">
+              <input id="reg-name" placeholder="Görünen ad" type="text">
+              <input id="reg-photo" placeholder="Profil fotoğrafı URL (isteğe bağlı)" type="text">
+              <input id="reg-email" placeholder="E-posta" type="email">
+              <input id="reg-pass" placeholder="Şifre" type="password">
+              <div class="row">
+                <button class="btn" id="btn-register">Kayıt Ol</button>
+                <button class="btn ghost" id="btn-show-login">Girişe Dön</button>
+              </div>
+              <div id="reg-msg" class="small"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sağ: Gönderiler -->
+    <div>
+      <div class="card" id="composer-card" style="display:none">
+        <div class="col">
+          <div><strong id="composer-who"></strong> olarak paylaşılıyor</div>
+          <textarea id="txt-post" maxlength="280" placeholder="Ne oluyor?"></textarea>
+          <div class="row" style="justify-content:space-between">
+            <div class="small">@Herkese açık gönderi</div>
+            <div>
+              <button class="btn" id="btn-post">Gönder</button>
+              <button class="btn ghost" id="btn-logout">Çıkış</button>
+            </div>
+          </div>
+          <div id="post-msg" class="small"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-weight:700">Gönderiler</div>
+          <div class="small" id="feed-status">Bağlanıyor...</div>
+        </div>
+        <div id="feed" class="feed"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  const firebaseConfig = {
+    apiKey: "AIzaSyANmMtb9isRBsFSua8QQF6CKLxgClk3OiI",
+    authDomain: "chirp-b7a1a.firebaseapp.com",
+    projectId: "chirp-b7a1a",
+    storageBucket: "chirp-b7a1a.firebasestorage.app",
+    messagingSenderId: "78401639379",
+    appId: "1:78401639379:web:232412aff77b29db261526"
+  };
+
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    signOut, updateProfile, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+  import {
+    getFirestore, collection, addDoc, serverTimestamp,
+    query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove
+  } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const btnShowRegister = document.getElementById('btn-show-register');
+  const btnShowLogin = document.getElementById('btn-show-login');
+  const registerPanel = document.getElementById('register');
+  const signedOut = document.getElementById('signed-out');
+  const composerCard = document.getElementById('composer-card');
+  const composerWho = document.getElementById('composer-who');
+  const txtPost = document.getElementById('txt-post');
+  const btnPost = document.getElementById('btn-post');
+  const feed = document.getElementById('feed');
+  const feedStatus = document.getElementById('feed-status');
+  const userArea = document.getElementById('user-area');
+  const postMsg = document.getElementById('post-msg');
+  const authMsg = document.getElementById('auth-msg');
+  const regMsg = document.getElementById('reg-msg');
+
+  const regName = document.getElementById('reg-name');
+  const regPhoto = document.getElementById('reg-photo');
+  const regEmail = document.getElementById('reg-email');
+  const regPass = document.getElementById('reg-pass');
+  const inEmail = document.getElementById('in-email');
+  const inPass = document.getElementById('in-pass');
+
+  btnShowRegister.onclick = () => { signedOut.style.display = 'none'; registerPanel.style.display = 'block'; };
+  btnShowLogin.onclick = () => { signedOut.style.display = 'block'; registerPanel.style.display = 'none'; };
+
+  document.getElementById('btn-register').onclick = async () => {
+    regMsg.textContent = '';
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, regEmail.value, regPass.value);
+      await updateProfile(cred.user, { displayName: regName.value, photoURL: regPhoto.value || "" });
+      regMsg.textContent = "Kayıt başarılı!";
+    } catch(e){ regMsg.textContent = "Hata: "+e.message; regMsg.className='error'; }
+  };
+
+  document.getElementById('btn-login').onclick = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, inEmail.value, inPass.value);
+    } catch(e){ authMsg.textContent = "Giriş hatası: "+e.message; authMsg.className='error'; }
+  };
+
+  document.getElementById('btn-logout').onclick = () => signOut(auth);
+
+  btnPost.onclick = async () => {
+    const txt = txtPost.value.trim();
+    const user = auth.currentUser;
+    if (!user || !txt) return;
+    await addDoc(collection(db, "posts"), {
+      uid: user.uid,
+      name: user.displayName || "Anonim",
+      photo: user.photoURL || "",
+      text: txt,
+      createdAt: serverTimestamp(),
+      likes: []
+    });
+    txtPost.value = "";
+  };
+
+  const postsQuery = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+  onSnapshot(postsQuery, (snap)=>{
+    feed.innerHTML = "";
+    snap.forEach(d=>{
+      const data = d.data();
+      const avatar = data.photo || "https://ui-avatars.com/api/?name=" + encodeURIComponent(data.name || "A");
+      const time = data.createdAt?.toDate().toLocaleString() || "";
+      const div = document.createElement("div");
+      div.className = "post";
+      div.innerHTML = `
+        <div class="meta">
+          <img src="${avatar}" class="avatar">
+          <div>
+            <div class="name">${escapeHtml(data.name)}</div>
+            <div class="time">${escapeHtml(time)}</div>
+          </div>
+        </div>
+        <div style="margin:8px 0">${escapeHtml(data.text)}</div>
+      `;
+      feed.appendChild(div);
+    });
+  });
+
+  onAuthStateChanged(auth, user=>{
+    if (user){
+      composerCard.style.display = 'block';
+      userArea.innerHTML = `<img src="${user.photoURL || 'https://ui-avatars.com/api/?name='+encodeURIComponent(user.displayName||'A')}" class="avatar" style="width:25px;height:25px;vertical-align:middle;margin-right:5px"> ${escapeHtml(user.displayName || 'Anonim')}`;
+      composerWho.textContent = user.displayName || "Anonim";
+    } else {
+      composerCard.style.display = 'none';
+      userArea.textContent = "Giriş yapılmadı";
+    }
+  });
+
+  function escapeHtml(s){return s ? s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;") : "";}
+</script>
+</body>
+</html>
