@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Chirp — Profil Destekli (Beğeni / Yorum / Silme)</title>
+<title>Chirp — Profil Destekli (Beğeni / Yorum / Silme + Arkadaş & DM)</title>
 <style>
   :root{--bg:#0f1724;--card:#0b1220;--accent:#1d9bf0;--muted:#94a3b8;--text:#e6eef8}
   *{box-sizing:border-box}
   body{font-family:Inter,Segoe UI,Roboto,Arial; margin:0; min-height:100vh;
     background:linear-gradient(180deg,#071024 0%, #0b1220 100%);
     color:var(--text); display:flex; align-items:flex-start; justify-content:center; padding:28px;}
-  .app{width:100%;max-width:920px}
+  .app{width:100%;max-width:1200px}
   header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
   h1{font-size:20px;margin:0}
   .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
@@ -38,61 +38,34 @@
   .comment-input{margin-left:48px;margin-top:8px}
   .small{font-size:13px;color:var(--muted)}
   .error{color:#ff8a8a}
-  @media(min-width:900px){ .layout{display:grid;grid-template-columns:320px 1fr; gap:16px} }
-     /* 🔹 Yükleniyor ekranı stilleri */
-   /* Yükleniyor ekranı */
-  #loading-screen {
-    position: fixed;
-    inset: 0;
-    background: #0b1220;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    color: var(--text);
-    font-size: 18px;
-    z-index: 9999;
-    transition: opacity 0.5s ease;
-  }
-  #loading-screen.fade-out {
-    opacity: 0;
-    pointer-events: none;
-  }
-  .spinner {
-    border: 3px solid rgba(255,255,255,0.1);
-    border-top: 3px solid var(--accent);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin-bottom: 12px;
-  }
-  @keyframes spin { 100% { transform: rotate(360deg); } }
+  @media(min-width:1000px){ .layout{display:grid;grid-template-columns:320px 1fr 320px; gap:16px} }
+  /* DM panel styles */
+  .dm-panel{display:flex;flex-direction:column;gap:8px;height:calc(100vh - 160px);overflow:hidden}
+  .friends-list{overflow:auto;padding:6px;max-height:220px}
+  .friend-item{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;cursor:pointer}
+  .friend-item:hover{background:rgba(255,255,255,0.01)}
+  .chat-window{flex:1;display:flex;flex-direction:column;border-radius:8px;border:1px solid rgba(255,255,255,0.03);overflow:hidden}
+  .chat-messages{flex:1;padding:8px;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+  .chat-input{display:flex;gap:8px;padding:8px;border-top:1px solid rgba(255,255,255,0.03)}
+  .emoji-btn{background:transparent;border:0;font-size:18px;cursor:pointer}
+  .msg-bubble{padding:8px;border-radius:8px;margin:6px 0;max-width:75%}
+  .msg-me{background:rgba(29,155,240,0.15);margin-left:auto}
+  .msg-other{background:rgba(255,255,255,0.03)}
+  /* loading screen */
+  #loading-screen{position:fixed;inset:0;background:#0b1220;display:flex;align-items:center;justify-content:center;flex-direction:column;color:var(--text);font-size:18px;z-index:9999;transition:opacity 0.5s ease;}
+  #loading-screen.fade-out{opacity:0;pointer-events:none}
+  .spinner{border:3px solid rgba(255,255,255,0.1);border-top:3px solid var(--accent);border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin-bottom:12px}
+  @keyframes spin{100%{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
-<!-- 🔹 Yükleniyor ekranı -->
+<!-- loading -->
 <div id="loading-screen">
   <div class="spinner"></div>
   <div>Chirpy yükleniyor...</div>
 </div>
-<!-- 🔹 En alttaki <script type="module"> kapanışından hemen sonra bu kodu ekle -->
-<script>
-  // Sayfa tamamen yüklendiğinde yükleniyor ekranını gizle
-  window.addEventListener("load", () => {
-    const scr = document.getElementById("loading-screen");
-    if (scr) {
-      setTimeout(() => scr.classList.add("fade-out"), 700);
-    }
-  });
-</script>
 
-
- 
-</style>
-</head>
-<body>
 <div class="app">
   <header>
     <h1>Chirp — Profil Destekli</h1>
@@ -100,7 +73,7 @@
   </header>
 
   <div class="layout">
-    <!-- Sol: Giriş -->
+    <!-- Left: Auth / Register -->
     <div>
       <div class="card" id="auth-card">
         <div id="auth-forms">
@@ -131,9 +104,16 @@
           </div>
         </div>
       </div>
+
+      <div class="card small">
+        <div style="font-weight:600;margin-bottom:8px">Nasıl çalışır?</div>
+        - Email/şifre ile oturum açın veya kayıt olun. <br>
+        - Gönderi yazın → feed güncellenir. <br>
+        - Arkadaş ekleyin, gelen istekleri kabul edin, sağ taraftan DM atın.
+      </div>
     </div>
 
-    <!-- Sağ: Gönderiler -->
+    <!-- Middle: Posts -->
     <div>
       <div class="card" id="composer-card" style="display:none">
         <div class="col">
@@ -158,235 +138,508 @@
         <div id="feed" class="feed"></div>
       </div>
     </div>
+
+    <!-- Right: Friends + DM -->
+    <div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-weight:700">Arkadaşlar & DM</div>
+          <div class="small">Sağ panel</div>
+        </div>
+
+        <div class="dm-panel">
+          <!-- Add friend -->
+          <div style="margin-bottom:8px">
+            <div class="small" style="margin-bottom:6px">E-posta ile arkadaş ekle</div>
+            <div style="display:flex;gap:8px">
+              <input id="add-email" placeholder="kisi@ornek.com" type="email" style="flex:1">
+              <button id="btn-add-friend" class="btn">Ekle</button>
+            </div>
+            <div id="add-msg" class="small"></div>
+          </div>
+
+          <!-- Incoming requests -->
+          <div style="margin-bottom:8px">
+            <div style="font-weight:600;margin-bottom:6px">Gelen İstekler</div>
+            <div id="requests" class="friends-list small"></div>
+          </div>
+
+          <!-- Friends list -->
+          <div style="font-weight:600;margin-bottom:6px">Arkadaşlar</div>
+          <div id="friends" class="friends-list"></div>
+
+          <!-- Chat -->
+          <div style="font-weight:600;margin-top:8px">Sohbet</div>
+          <div class="chat-window">
+            <div id="chat-with" class="small" style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.03)"></div>
+            <div id="chat-messages" class="chat-messages"></div>
+            <div class="chat-input">
+              <div>
+                <button class="emoji-btn" data-emoji="😊">😊</button>
+                <button class="emoji-btn" data-emoji="😂">😂</button>
+                <button class="emoji-btn" data-emoji="❤️">❤️</button>
+                <button class="emoji-btn" data-emoji="🔥">🔥</button>
+              </div>
+              <input id="dm-input" placeholder="Mesaj yaz..." style="flex:1">
+              <button id="dm-send" class="btn">Gönder</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>
 
 <script type="module">
-  const firebaseConfig = {
-    apiKey: "AIzaSyANmMtb9isRBsFSua8QQF6CKLxgClk3OiI",
-    authDomain: "chirp-b7a1a.firebaseapp.com",
-    projectId: "chirp-b7a1a",
-    storageBucket: "chirp-b7a1a.firebasestorage.app",
-    messagingSenderId: "78401639379",
-    appId: "1:78401639379:web:232412aff77b29db261526"
-  };
+/* ---------- Firebase init ---------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyANmMtb9isRBsFSua8QQF6CKLxgClk3OiI",
+  authDomain: "chirp-b7a1a.firebaseapp.com",
+  projectId: "chirp-b7a1a",
+  storageBucket: "chirp-b7a1a.firebasestorage.app",
+  messagingSenderId: "78401639379",
+  appId: "1:78401639379:web:232412aff77b29db261526"
+};
 
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-  import {
-    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    signOut, updateProfile, onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-  import {
-    getFirestore, collection, addDoc, serverTimestamp,
-    query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc
-  } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, updateProfile, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot,
+  doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, where, getDocs, getDoc, setDoc
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-  // elements
-  const btnShowRegister = document.getElementById('btn-show-register');
-  const btnShowLogin = document.getElementById('btn-show-login');
-  const registerPanel = document.getElementById('register');
-  const signedOut = document.getElementById('signed-out');
-  const composerCard = document.getElementById('composer-card');
-  const composerWho = document.getElementById('composer-who');
-  const txtPost = document.getElementById('txt-post');
-  const btnPost = document.getElementById('btn-post');
-  const feed = document.getElementById('feed');
-  const feedStatus = document.getElementById('feed-status');
-  const userArea = document.getElementById('user-area');
-  const postMsg = document.getElementById('post-msg');
-  const authMsg = document.getElementById('auth-msg');
-  const regMsg = document.getElementById('reg-msg');
-  const regName = document.getElementById('reg-name');
-  const regPhoto = document.getElementById('reg-photo');
-  const regEmail = document.getElementById('reg-email');
-  const regPass = document.getElementById('reg-pass');
-  const inEmail = document.getElementById('in-email');
-  const inPass = document.getElementById('in-pass');
+/* ---------- DOM references ---------- */
+const btnShowRegister = document.getElementById('btn-show-register');
+const btnShowLogin = document.getElementById('btn-show-login');
+const registerPanel = document.getElementById('register');
+const signedOut = document.getElementById('signed-out');
+const composerCard = document.getElementById('composer-card');
+const composerWho = document.getElementById('composer-who');
+const txtPost = document.getElementById('txt-post');
+const btnPost = document.getElementById('btn-post');
+const feed = document.getElementById('feed');
+const feedStatus = document.getElementById('feed-status');
+const userArea = document.getElementById('user-area');
+const postMsg = document.getElementById('post-msg');
+const authMsg = document.getElementById('auth-msg');
+const regMsg = document.getElementById('reg-msg');
+const regName = document.getElementById('reg-name');
+const regPhoto = document.getElementById('reg-photo');
+const regEmail = document.getElementById('reg-email');
+const regPass = document.getElementById('reg-pass');
+const inEmail = document.getElementById('in-email');
+const inPass = document.getElementById('in-pass');
 
-  // toggle forms
-  btnShowRegister.onclick = () => { signedOut.style.display = 'none'; registerPanel.style.display = 'block'; };
-  btnShowLogin.onclick = () => { signedOut.style.display = 'block'; registerPanel.style.display = 'none'; };
+/* Friends / DM DOM */
+const addEmail = document.getElementById('add-email');
+const btnAddFriend = document.getElementById('btn-add-friend');
+const addMsg = document.getElementById('add-msg');
+const requestsBox = document.getElementById('requests');
+const friendsBox = document.getElementById('friends');
+const chatWith = document.getElementById('chat-with');
+const chatMessages = document.getElementById('chat-messages');
+const dmInput = document.getElementById('dm-input');
+const dmSend = document.getElementById('dm-send');
+const emojiBtns = document.querySelectorAll('.emoji-btn');
 
-  // register
-  document.getElementById('btn-register').onclick = async () => {
-    regMsg.textContent = '';
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, regEmail.value.trim(), regPass.value);
-      await updateProfile(cred.user, { displayName: regName.value.trim(), photoURL: regPhoto.value.trim() || "" });
-      regMsg.textContent = "Kayıt başarılı! Giriş yapıldı.";
-    } catch(e){ regMsg.textContent = "Hata: "+e.message; regMsg.className='error'; }
-  };
+/* ---------- Helper functions ---------- */
+function escapeHtml(s){ return s ? s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;") : ""; }
+function convId(a,b){ return [a,b].sort().join('_'); } // deterministic conversation id
+function shortTime(ts){ try { return ts.toDate().toLocaleString(); } catch(e){ return ""; } }
 
-  // login
-  document.getElementById('btn-login').onclick = async () => {
-    authMsg.textContent = '';
-    try {
-      await signInWithEmailAndPassword(auth, inEmail.value.trim(), inPass.value);
-    } catch(e){ authMsg.textContent = "Giriş hatası: "+e.message; authMsg.className='error'; }
-  };
-
-  // logout
-  document.getElementById('btn-logout').onclick = () => signOut(auth);
-
-  // create post
-  btnPost.onclick = async () => {
-    postMsg.textContent = '';
-    const txt = txtPost.value.trim();
-    const user = auth.currentUser;
-    if (!user) { postMsg.textContent = 'Önce giriş yapmalısınız.'; postMsg.className='error'; return; }
-    if (!txt) { postMsg.textContent = 'Boş gönderi gönderilemez.'; postMsg.className='error'; return; }
-    try {
-      await addDoc(collection(db, "posts"), {
-        uid: user.uid,
-        name: user.displayName || "Anonim",
-        photo: user.photoURL || "",
-        text: txt,
-        createdAt: serverTimestamp(),
-        likes: [],
-        comments: []
-      });
-      txtPost.value = "";
-      postMsg.textContent = 'Gönderildi.'; postMsg.className='small';
-      setTimeout(()=>postMsg.textContent='',1200);
-    } catch(e) {
-      postMsg.textContent = 'Gönderme hatası: '+e.message; postMsg.className='error';
-    }
-  };
-
-  // realtime feed (render)
-  const postsQuery = query(collection(db, "posts"), orderBy("createdAt","desc"));
-  onSnapshot(postsQuery, (snap)=>{
-    feed.innerHTML = "";
-    const currentUser = auth.currentUser; // snapshot render time
-    snap.forEach(docSnap=>{
-      const data = docSnap.data();
-      const id = docSnap.id;
-      const avatar = data.photo || "https://ui-avatars.com/api/?name=" + encodeURIComponent(data.name || "A");
-      const time = data.createdAt?.toDate().toLocaleString() || "";
-      const likesCount = Array.isArray(data.likes) ? data.likes.length : 0;
-      const comments = Array.isArray(data.comments) ? data.comments : [];
-
-      const div = document.createElement('div');
-      div.className = 'post';
-      // Buttons: like/comment/delete (delete shown only if currentUser && owner)
-      const isOwner = currentUser && (currentUser.uid === data.uid);
-      const liked = currentUser && Array.isArray(data.likes) && data.likes.includes(currentUser.uid);
-
-      div.innerHTML = `
-        ${isOwner ? `<button class="delete-btn" data-id="${id}">🗑</button>` : ''}
-        <div class="meta">
-          <img src="${avatar}" class="avatar">
-          <div>
-            <div class="name">${escapeHtml(data.name)}</div>
-            <div class="time">${escapeHtml(time)}</div>
-          </div>
-        </div>
-        <div style="margin:8px 0">${escapeHtml(data.text)}</div>
-
-        <div class="row small" style="gap:12px;align-items:center">
-          <button class="like ${liked ? 'liked':''}" data-id="${id}">❤ <span class="like-count">${likesCount}</span></button>
-          <button class="comment-btn" data-id="${id}">💬 <span class="comment-count">${comments.length}</span></button>
-        </div>
-
-        <div class="comments">
-          ${comments.map(c => `<div class="comment"><b>${escapeHtml(c.name)}:</b> ${escapeHtml(c.text)}</div>`).join('')}
-          <div class="comment-input">
-            <input data-comment-id="${id}" placeholder="Yorum yaz ve Enter'a bas..." style="width:100%;padding:8px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:var(--text)">
-          </div>
-        </div>
-      `;
-
-      // attach button handlers for delete/like/comment via event delegation below
-      feed.appendChild(div);
+/* ---------- Create user doc on registration ---------- */
+async function ensureUserDoc(user) {
+  if (!user) return;
+  const userDocRef = doc(db, 'users', user.uid);
+  const snap = await getDoc(userDocRef);
+  if (!snap.exists()) {
+    await setDoc(userDocRef, {
+      uid: user.uid,
+      email: user.email || "",
+      name: user.displayName || "",
+      photo: user.photoURL || "",
+      friends: []
     });
-    feedStatus.textContent = "Güncel";
-  }, err => {
-    feedStatus.textContent = "Bağlantı hatası";
-    console.error('snapshot err', err);
+  } else {
+    // keep profile fields up to date
+    await updateDoc(userDocRef, {
+      email: user.email || "",
+      name: user.displayName || "",
+      photo: user.photoURL || ""
+    }).catch(()=>{});
+  }
+}
+
+/* ---------- Auth UI handlers (kept from original) ---------- */
+btnShowRegister.onclick = () => { signedOut.style.display = 'none'; registerPanel.style.display = 'block'; };
+btnShowLogin.onclick = () => { signedOut.style.display = 'block'; registerPanel.style.display = 'none'; };
+
+// register: create auth user + update profile + users collection doc
+document.getElementById('btn-register').onclick = async () => {
+  regMsg.textContent = '';
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, regEmail.value.trim(), regPass.value);
+    await updateProfile(cred.user, { displayName: regName.value.trim(), photoURL: regPhoto.value.trim() || "" });
+    await ensureUserDoc(cred.user);
+    regMsg.textContent = "Kayıt başarılı! Giriş yapıldı.";
+  } catch(e){ regMsg.textContent = "Hata: "+e.message; regMsg.className='error'; }
+};
+
+// login
+document.getElementById('btn-login').onclick = async () => {
+  authMsg.textContent = '';
+  try {
+    await signInWithEmailAndPassword(auth, inEmail.value.trim(), inPass.value);
+  } catch(e){ authMsg.textContent = "Giriş hatası: "+e.message; authMsg.className='error'; }
+};
+
+// logout
+document.getElementById('btn-logout').onclick = () => signOut(auth);
+
+/* ---------- Posts (kept from original) ---------- */
+btnPost.onclick = async () => {
+  postMsg.textContent = '';
+  const txt = txtPost.value.trim();
+  const user = auth.currentUser;
+  if (!user) { postMsg.textContent = 'Önce giriş yapmalısınız.'; postMsg.className='error'; return; }
+  if (!txt) { postMsg.textContent = 'Boş gönderi gönderilemez.'; postMsg.className='error'; return; }
+  try {
+    await addDoc(collection(db, "posts"), {
+      uid: user.uid,
+      name: user.displayName || "Anonim",
+      photo: user.photoURL || "",
+      text: txt,
+      createdAt: serverTimestamp(),
+      likes: [],
+      comments: []
+    });
+    txtPost.value = "";
+    postMsg.textContent = 'Gönderildi.'; postMsg.className='small';
+    setTimeout(()=>postMsg.textContent='',1200);
+  } catch(e) {
+    postMsg.textContent = 'Gönderme hatası: '+e.message; postMsg.className='error';
+  }
+};
+
+const postsQuery = query(collection(db, "posts"), orderBy("createdAt","desc"));
+onSnapshot(postsQuery, (snap)=>{
+  feed.innerHTML = "";
+  const currentUser = auth.currentUser;
+  snap.forEach(docSnap=>{
+    const data = docSnap.data();
+    const id = docSnap.id;
+    const avatar = data.photo || "https://ui-avatars.com/api/?name=" + encodeURIComponent(data.name || "A");
+    const time = data.createdAt?.toDate().toLocaleString() || "";
+    const likesCount = Array.isArray(data.likes) ? data.likes.length : 0;
+    const comments = Array.isArray(data.comments) ? data.comments : [];
+
+    const div = document.createElement('div');
+    div.className = 'post';
+    const isOwner = currentUser && (currentUser.uid === data.uid);
+    const liked = currentUser && Array.isArray(data.likes) && data.likes.includes(currentUser.uid);
+
+    div.innerHTML = `
+      ${isOwner ? `<button class="delete-btn" data-id="${id}">🗑</button>` : ''}
+      <div class="meta">
+        <img src="${avatar}" class="avatar">
+        <div>
+          <div class="name">${escapeHtml(data.name)}</div>
+          <div class="time">${escapeHtml(time)}</div>
+        </div>
+      </div>
+      <div style="margin:8px 0">${escapeHtml(data.text)}</div>
+
+      <div class="row small" style="gap:12px;align-items:center">
+        <button class="like ${liked ? 'liked':''}" data-id="${id}">❤ <span class="like-count">${likesCount}</span></button>
+        <button class="comment-btn" data-id="${id}">💬 <span class="comment-count">${comments.length}</span></button>
+      </div>
+
+      <div class="comments">
+        ${comments.map(c => `<div class="comment"><b>${escapeHtml(c.name)}:</b> ${escapeHtml(c.text)}</div>`).join('')}
+        <div class="comment-input">
+          <input data-comment-id="${id}" placeholder="Yorum yaz ve Enter'a bas..." style="width:100%;padding:8px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:var(--text)">
+        </div>
+      </div>
+    `;
+    feed.appendChild(div);
   });
+  feedStatus.textContent = "Güncel";
+}, err => {
+  feedStatus.textContent = "Bağlantı hatası";
+  console.error('snapshot err', err);
+});
 
-  // Delegated event handling for feed: like, delete, comment-button, and Enter on comment inputs
-  feed.addEventListener('click', async (ev) => {
-    const el = ev.target;
-    const user = auth.currentUser;
-    if (!user) { alert('Lütfen önce giriş yapın.'); return; }
+feed.addEventListener('click', async (ev) => {
+  const el = ev.target;
+  const user = auth.currentUser;
+  if (!user) { alert('Lütfen önce giriş yapın.'); return; }
 
-    // Like button (or inner span)
-    const likeBtn = el.closest('.like');
-    if (likeBtn) {
-      const id = likeBtn.dataset.id;
-      const postRef = doc(db, 'posts', id);
-      // If already liked -> remove, else add
-      if (likeBtn.classList.contains('liked')) {
-        await updateDoc(postRef, { likes: arrayRemove(user.uid) });
-      } else {
-        await updateDoc(postRef, { likes: arrayUnion(user.uid) });
-      }
-      return;
-    }
-
-    // Delete button
-    const delBtn = el.closest('.delete-btn');
-    if (delBtn) {
-      const id = delBtn.dataset.id;
-      if (!confirm('Bu gönderiyi silmek istiyor musun?')) return;
-      try {
-        await deleteDoc(doc(db, 'posts', id));
-      } catch (e) {
-        alert('Silme hatası: ' + e.message);
-      }
-      return;
-    }
-
-    // Comment button (focus input)
-    const cBtn = el.closest('.comment-btn');
-    if (cBtn) {
-      const id = cBtn.dataset.id;
-      const input = feed.querySelector(`input[data-comment-id="${id}"]`);
-      if (input) input.focus();
-      return;
-    }
-  });
-
-  // Enter ile yorum gönderme (keydown)
-  feed.addEventListener('keydown', async (ev) => {
-    if (ev.key !== 'Enter') return;
-    const el = ev.target;
-    if (!el.dataset || !el.dataset.commentId) return;
-    ev.preventDefault();
-    const id = el.dataset.commentId;
-    const text = el.value.trim();
-    const user = auth.currentUser;
-    if (!user) { alert('Lütfen giriş yapın.'); return; }
-    if (!text) return;
+  const likeBtn = el.closest('.like');
+  if (likeBtn) {
+    const id = likeBtn.dataset.id;
     const postRef = doc(db, 'posts', id);
-    try {
-      await updateDoc(postRef, { comments: arrayUnion({ uid: user.uid, name: user.displayName || 'Anonim', text }) });
-      el.value = '';
-    } catch (e) {
-      alert('Yorum hatası: ' + e.message);
-    }
-  });
-
-  // auth state
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      composerCard.style.display = 'block';
-      composerWho.textContent = user.displayName || 'Anonim';
-      userArea.innerHTML = `<img src="${user.photoURL || 'https://ui-avatars.com/api/?name='+encodeURIComponent(user.displayName||'A')}" class="avatar" style="width:28px;height:28px;vertical-align:middle;margin-right:8px"> ${escapeHtml(user.displayName || 'Anonim')} <button id="mini-logout" class="btn ghost" style="margin-left:8px;padding:6px 8px;font-size:12px">Çık</button>`;
-      const mini = document.getElementById('mini-logout');
-      if (mini) mini.onclick = () => signOut(auth);
+    if (likeBtn.classList.contains('liked')) {
+      await updateDoc(postRef, { likes: arrayRemove(user.uid) });
     } else {
-      composerCard.style.display = 'none';
-      userArea.textContent = 'Giriş yapılmadı';
+      await updateDoc(postRef, { likes: arrayUnion(user.uid) });
+    }
+    return;
+  }
+
+  const delBtn = el.closest('.delete-btn');
+  if (delBtn) {
+    const id = delBtn.dataset.id;
+    if (!confirm('Bu gönderiyi silmek istiyor musun?')) return;
+    try {
+      await deleteDoc(doc(db, 'posts', id));
+    } catch (e) {
+      alert('Silme hatası: ' + e.message);
+    }
+    return;
+  }
+
+  const cBtn = el.closest('.comment-btn');
+  if (cBtn) {
+    const id = cBtn.dataset.id;
+    const input = feed.querySelector(`input[data-comment-id="${id}"]`);
+    if (input) input.focus();
+    return;
+  }
+});
+
+feed.addEventListener('keydown', async (ev) => {
+  if (ev.key !== 'Enter') return;
+  const el = ev.target;
+  if (!el.dataset || !el.dataset.commentId) return;
+  ev.preventDefault();
+  const id = el.dataset.commentId;
+  const text = el.value.trim();
+  const user = auth.currentUser;
+  if (!user) { alert('Lütfen giriş yapın.'); return; }
+  if (!text) return;
+  const postRef = doc(db, 'posts', id);
+  try {
+    await updateDoc(postRef, { comments: arrayUnion({ uid: user.uid, name: user.displayName || 'Anonim', text }) });
+    el.value = '';
+  } catch (e) {
+    alert('Yorum hatası: ' + e.message);
+  }
+});
+
+/* ---------- Friends & Friend Requests ---------- */
+
+// send friend request by email
+btnAddFriend.onclick = async () => {
+  addMsg.textContent = '';
+  const email = addEmail.value.trim().toLowerCase();
+  const me = auth.currentUser;
+  if (!me) { addMsg.textContent = 'Önce giriş yapmalısınız.'; addMsg.className='error'; return; }
+  if (!email) { addMsg.textContent = 'E-posta girin.'; addMsg.className='error'; return; }
+
+  try {
+    // find user by email
+    const q = query(collection(db, 'users'), where('email', '==', email), );
+    const snaps = await getDocs(q);
+    if (snaps.empty) { addMsg.textContent = 'Kullanıcı bulunamadı.'; addMsg.className='error'; return; }
+    const toDoc = snaps.docs[0];
+    const toUid = toDoc.id;
+    if (toUid === me.uid) { addMsg.textContent = 'Kendi kendine ekleyemezsin.'; addMsg.className='error'; return; }
+
+    // check existing friendship
+    const meRef = doc(db, 'users', me.uid);
+    const meSnap = await getDoc(meRef);
+    const meData = meSnap.data() || {};
+    if (Array.isArray(meData.friends) && meData.friends.includes(toUid)) {
+      addMsg.textContent = 'Zaten arkadaşsınız.'; addMsg.className='small'; return;
+    }
+
+    // create friend request doc
+    await addDoc(collection(db, 'friendRequests'), {
+      fromUid: me.uid,
+      toUid,
+      fromName: me.displayName || '',
+      toName: toDoc.data().name || '',
+      status: 'pending',
+      createdAt: serverTimestamp()
+    });
+    addMsg.textContent = 'İstek gönderildi.';
+    addMsg.className='small';
+    addEmail.value = '';
+  } catch (e) {
+    addMsg.textContent = 'Hata: ' + e.message; addMsg.className='error';
+  }
+};
+
+// render incoming friend requests (real-time)
+onSnapshot(query(collection(db, 'friendRequests'), orderBy('createdAt','desc')), snap => {
+  const me = auth.currentUser;
+  requestsBox.innerHTML = '';
+  if (!me) return;
+  snap.forEach(d => {
+    const r = d.data(); const id = d.id;
+    if (r.toUid !== me.uid) return;
+    const row = document.createElement('div');
+    row.className = 'friend-item';
+    row.innerHTML = `<div><b>${escapeHtml(r.fromName||r.fromUid)}</b><div class="small">${escapeHtml(r.fromUid)}</div></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn" data-accept="${id}">Kabul</button>
+        <button class="btn ghost" data-decline="${id}">Reddet</button>
+      </div>`;
+    requestsBox.appendChild(row);
+  });
+});
+
+// accept / decline via delegation
+requestsBox.addEventListener('click', async (ev) => {
+  const accept = ev.target.dataset.accept;
+  const decline = ev.target.dataset.decline;
+  if (accept) {
+    const rRef = doc(db, 'friendRequests', accept);
+    const rSnap = await getDoc(rRef);
+    if (!rSnap.exists()) return;
+    const r = rSnap.data();
+    try {
+      // add to both users' friends arrays
+      await updateDoc(doc(db,'users', r.toUid), { friends: arrayUnion(r.fromUid) });
+      await updateDoc(doc(db,'users', r.fromUid), { friends: arrayUnion(r.toUid) });
+      // delete request
+      await deleteDoc(rRef);
+    } catch(e){ alert('Kabul hatası: '+e.message); }
+  } else if (decline) {
+    await deleteDoc(doc(db,'friendRequests', decline));
+  }
+});
+
+/* ---------- Friends list realtime ---------- */
+let friendsUnsub = null;
+function listenFriends(uid){
+  if (friendsUnsub) friendsUnsub();
+  const userDocRef = doc(db,'users', uid);
+  // listen to user doc for friends array updates
+  friendsUnsub = onSnapshot(userDocRef, async snap => {
+    if (!snap.exists()) { friendsBox.innerHTML = ''; return; }
+    const data = snap.data();
+    const friends = Array.isArray(data.friends) ? data.friends : [];
+    friendsBox.innerHTML = '';
+    // for each friend uid, fetch user info
+    for (const fid of friends) {
+      try {
+        const fSnap = await getDoc(doc(db,'users', fid));
+        const f = fSnap.data() || {};
+        const item = document.createElement('div');
+        item.className = 'friend-item';
+        item.innerHTML = `<div style="display:flex;align-items:center;gap:8px"><img src="${f.photo || 'https://ui-avatars.com/api/?name='+encodeURIComponent(f.name||'A')}" style="width:34px;height:34px;border-radius:50%"><div><div style="font-weight:600">${escapeHtml(f.name||'Anonim')}</div><div class="small">${escapeHtml(f.email||'')}</div></div></div>
+          <div style="display:flex;gap:6px"><button class="btn" data-chat="${fid}">Chat</button><button class="btn ghost" data-unfriend="${fid}">Kaldır</button></div>`;
+        friendsBox.appendChild(item);
+      } catch(e){}
     }
   });
+}
 
-  function escapeHtml(s){ return s ? s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;") : ""; }
+// unfriend
+friendsBox.addEventListener('click', async (ev) => {
+  const un = ev.target.dataset.unfriend;
+  const chat = ev.target.dataset.chat;
+  const me = auth.currentUser;
+  if (un) {
+    if (!confirm('Arkadaşı kaldırmak istiyor musun?')) return;
+    try {
+      await updateDoc(doc(db,'users', me.uid), { friends: arrayRemove(un) });
+      await updateDoc(doc(db,'users', un), { friends: arrayRemove(me.uid) });
+    } catch(e){ alert('Hata: '+e.message); }
+  } else if (chat) {
+    openChatWith(chat);
+  }
+});
+
+/* ---------- DM (conversations) ---------- */
+let currentConv = null;
+let convUnsub = null;
+
+function openChatWith(friendUid){
+  const me = auth.currentUser;
+  if (!me) return alert('Önce giriş yapın.');
+  if (convUnsub) convUnsub();
+  const id = convId(me.uid, friendUid);
+  currentConv = { id, friendUid };
+  chatWith.textContent = 'Sohbet: ' + friendUid;
+  chatMessages.innerHTML = '';
+  // listen messages
+  const msgsQuery = query(collection(db, 'conversations', id, 'messages'), orderBy('createdAt','asc'));
+  convUnsub = onSnapshot(msgsQuery, snap => {
+    chatMessages.innerHTML = '';
+    snap.forEach(m=> {
+      const md = m.data();
+      const el = document.createElement('div');
+      el.className = 'msg-bubble ' + (md.from === me.uid ? 'msg-me' : 'msg-other');
+      el.innerHTML = `<div style="font-size:12px;color:var(--muted)">${escapeHtml(md.name||md.from)}</div><div>${escapeHtml(md.text)}</div><div class="small">${shortTime(md.createdAt)}</div>`;
+      chatMessages.appendChild(el);
+    });
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  });
+}
+
+// send DM
+dmSend.onclick = async () => {
+  const txt = dmInput.value.trim();
+  const me = auth.currentUser;
+  if (!me) return alert('Giriş yapmalısın');
+  if (!currentConv) return alert('Önce bir arkadaş seçin.');
+  if (!txt) return;
+  const convRef = doc(db, 'conversations', currentConv.id);
+  // ensure conversation doc exists
+  await setDoc(convRef, { participants: currentConv.id.split('_') }, { merge: true });
+  await addDoc(collection(db, 'conversations', currentConv.id, 'messages'), {
+    from: me.uid,
+    name: me.displayName || '',
+    text: txt,
+    createdAt: serverTimestamp()
+  });
+  dmInput.value = '';
+};
+
+// emoji buttons
+emojiBtns.forEach(b => {
+  b.addEventListener('click', ()=> {
+    dmInput.value += b.dataset.emoji;
+    dmInput.focus();
+  });
+});
+
+/* ---------- Auth state: ensure user doc, listen friends ---------- */
+onAuthStateChanged(auth, async user => {
+  if (user){
+    await ensureUserDoc(user);
+    composerCard.style.display = 'block';
+    composerWho.textContent = user.displayName || 'Anonim';
+    userArea.innerHTML = `<img src="${user.photoURL || 'https://ui-avatars.com/api/?name='+encodeURIComponent(user.displayName||'A')}" class="avatar" style="width:28px;height:28px;vertical-align:middle;margin-right:8px"> ${escapeHtml(user.displayName || 'Anonim')} <button id="mini-logout" class="btn ghost" style="margin-left:8px;padding:6px 8px;font-size:12px">Çık</button>`;
+    const mini = document.getElementById('mini-logout'); if (mini) mini.onclick = () => signOut(auth);
+    // start listening to friends
+    listenFriends(user.uid);
+    // optionally load pending friend requests filtered for me is handled by snapshot above (we already listen to all requests and filter by me)
+  } else {
+    composerCard.style.display = 'none';
+    userArea.textContent = 'Giriş yapılmadı';
+    if (friendsUnsub) friendsUnsub();
+    if (convUnsub) convUnsub();
+  }
+});
+
+/* ---------- Hide loading screen on page load ---------- */
+window.addEventListener("load", () => {
+  const scr = document.getElementById("loading-screen");
+  if (scr) setTimeout(() => scr.classList.add("fade-out"), 700);
+});
+
 </script>
 </body>
 </html>
+
