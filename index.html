@@ -39,6 +39,57 @@
   .small{font-size:13px;color:var(--muted)}
   .error{color:#ff8a8a}
   @media(min-width:900px){ .layout{display:grid;grid-template-columns:320px 1fr; gap:16px} }
+     /* 🔹 Yükleniyor ekranı stilleri */
+   /* Yükleniyor ekranı */
+  #loading-screen {
+    position: fixed;
+    inset: 0;
+    background: #0b1220;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: var(--text);
+    font-size: 18px;
+    z-index: 9999;
+    transition: opacity 0.5s ease;
+  }
+  #loading-screen.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .spinner {
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top: 3px solid var(--accent);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- 🔹 Yükleniyor ekranı -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div>Chirpy yükleniyor...</div>
+</div>
+<!-- 🔹 En alttaki <script type="module"> kapanışından hemen sonra bu kodu ekle -->
+<script>
+  // Sayfa tamamen yüklendiğinde yükleniyor ekranını gizle
+  window.addEventListener("load", () => {
+    const scr = document.getElementById("loading-screen");
+    if (scr) {
+      setTimeout(() => scr.classList.add("fade-out"), 700);
+    }
+  });
+</script>
+
+
+ 
 </style>
 </head>
 <body>
@@ -339,4 +390,3 @@
 </script>
 </body>
 </html>
-
