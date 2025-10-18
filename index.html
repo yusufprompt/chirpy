@@ -3,24 +3,29 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Chirp — Sesli Mesaj Destekli</title>
+<title>Chirp — Profil Destekli (Beğeni / Yorum / Silme)</title>
 <style>
   :root{--bg:#0f1724;--card:#0b1220;--accent:#1d9bf0;--muted:#94a3b8;--text:#e6eef8}
   *{box-sizing:border-box}
-  body{font-family:Inter,Segoe UI,Roboto,Arial;margin:0;min-height:100vh;background:linear-gradient(180deg,#071024 0%, #0b1220 100%);color:var(--text);display:flex;align-items:flex-start;justify-content:center;padding:28px;}
+  body{font-family:Inter,Segoe UI,Roboto,Arial; margin:0; min-height:100vh;
+    background:linear-gradient(180deg,#071024 0%, #0b1220 100%);
+    color:var(--text); display:flex; align-items:flex-start; justify-content:center; padding:28px;}
   .app{width:100%;max-width:920px}
   header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
   h1{font-size:20px;margin:0}
-  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:16px;border-radius:12px; box-shadow:0 6px 24px rgba(2,6,23,0.6); margin-bottom:14px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    padding:16px;border-radius:12px; box-shadow:0 6px 24px rgba(2,6,23,0.6); margin-bottom:14px}
   input,textarea,button{font:inherit}
-  input,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)}
+  input,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);
+    background:transparent;color:var(--text)}
   textarea{min-height:80px;resize:vertical}
   .btn{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:9px;cursor:pointer}
   .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
   .row{display:flex;gap:12px;align-items:center}
   .col{display:flex;flex-direction:column;gap:8px}
   .feed{display:flex;flex-direction:column;gap:10px}
-  .post{padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);position:relative}
+  .post{padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);
+    background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);position:relative}
   .meta{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
   .avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.1)}
   .name{font-weight:600;color:var(--text)}
@@ -33,31 +38,71 @@
   .comment-input{margin-left:48px;margin-top:8px}
   .small{font-size:13px;color:var(--muted)}
   .error{color:#ff8a8a}
-  .rec-order{display:flex;gap:8px;align-items:center;margin-top:8px}
-  .rec-dot{width:10px;height:10px;border-radius:50%;background:#ff6b6b;display:inline-block;animation:pulse 1s infinite}
-  @keyframes pulse{0%{opacity:1}50%{opacity:.3}100%{opacity:1}}
   @media(min-width:900px){ .layout{display:grid;grid-template-columns:320px 1fr; gap:16px} }
-  /* loader */
-  #loading-screen{position:fixed;inset:0;background:#0b1220;display:flex;align-items:center;justify-content:center;flex-direction:column;color:var(--text);font-size:18px;z-index:9999;transition:opacity .5s}
-  #loading-screen.fade-out{opacity:0;pointer-events:none}
-  .spinner{width:44px;height:44px;border:4px solid rgba(255,255,255,0.08);border-top:4px solid var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:12px}
-  @keyframes spin{to{transform:rotate(360deg)}}
+     /* 🔹 Yükleniyor ekranı stilleri */
+   /* Yükleniyor ekranı */
+  #loading-screen {
+    position: fixed;
+    inset: 0;
+    background: #0b1220;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: var(--text);
+    font-size: 18px;
+    z-index: 9999;
+    transition: opacity 0.5s ease;
+  }
+  #loading-screen.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .spinner {
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top: 3px solid var(--accent);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
-<!-- loader -->
-<div id="loading-screen"><div class="spinner"></div><div>Chirpy yükleniyor...</div></div>
 
-<div class="app" id="appRoot" style="display:none">
+<!-- 🔹 Yükleniyor ekranı -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div>Chirpy yükleniyor...</div>
+</div>
+<!-- 🔹 En alttaki <script type="module"> kapanışından hemen sonra bu kodu ekle -->
+<script>
+  // Sayfa tamamen yüklendiğinde yükleniyor ekranını gizle
+  window.addEventListener("load", () => {
+    const scr = document.getElementById("loading-screen");
+    if (scr) {
+      setTimeout(() => scr.classList.add("fade-out"), 700);
+    }
+  });
+</script>
+
+
+ 
+</style>
+</head>
+<body>
+<div class="app">
   <header>
-    <h1>Chirp — Sesli Mesajlı</h1>
+    <h1>Chirp — Profil Destekli</h1>
     <div id="user-area" class="small"></div>
   </header>
 
   <div class="layout">
-    <!-- left: auth -->
+    <!-- Sol: Giriş -->
     <div>
-      <div class="card">
+      <div class="card" id="auth-card">
         <div id="auth-forms">
           <div id="signed-out">
             <div class="col">
@@ -70,10 +115,11 @@
               <div id="auth-msg" class="small"></div>
             </div>
           </div>
+
           <div id="register" style="display:none">
             <div class="col">
               <input id="reg-name" placeholder="Görünen ad" type="text">
-              <input id="reg-photo" placeholder="Profil foto URL (isteğe bağlı)" type="text">
+              <input id="reg-photo" placeholder="Profil fotoğrafı URL (isteğe bağlı)" type="text">
               <input id="reg-email" placeholder="E-posta" type="email">
               <input id="reg-pass" placeholder="Şifre" type="password">
               <div class="row">
@@ -85,29 +131,15 @@
           </div>
         </div>
       </div>
-      <div class="card small">
-        <div style="font-weight:600;margin-bottom:8px">Sesli mesaj nasıl çalışır?</div>
-        - 🎤 "Kaydet" ile ses kaydet, "Dur" ile bitir. <br>
-        - Kaydı upload ediyoruz (file.io kullanılıyor). <br>
-        - Link Firestore'a kaydedilir; feed'de oynatabilirsiniz.
-      </div>
     </div>
 
-    <!-- right: composer + feed -->
+    <!-- Sağ: Gönderiler -->
     <div>
       <div class="card" id="composer-card" style="display:none">
         <div class="col">
           <div><strong id="composer-who"></strong> olarak paylaşılıyor</div>
-          <textarea id="txt-post" maxlength="280" placeholder="Ne oluyor? (opsiyonel yazı)"></textarea>
-          <!-- media upload (image/video) optional -->
-          <input type="file" id="mediaFile" accept="image/*,video/*" style="margin-top:8px">
-          <!-- audio recorder -->
-          <div style="margin-top:8px">
-            <button class="btn" id="rec-start">Kaydı Başlat</button>
-            <button class="btn ghost" id="rec-stop" disabled>Dur</button>
-            <span id="rec-status" class="small" style="margin-left:8px"></span>
-          </div>
-          <div class="row" style="justify-content:space-between;margin-top:8px">
+          <textarea id="txt-post" maxlength="280" placeholder="Ne oluyor?"></textarea>
+          <div class="row" style="justify-content:space-between">
             <div class="small">@Herkese açık gönderi</div>
             <div>
               <button class="btn" id="btn-post">Gönder</button>
@@ -130,298 +162,231 @@
 </div>
 
 <script type="module">
-// ----------- Firebase config - değiştirersen kendi projenle değiştir -------------
-const firebaseConfig = {
-  apiKey: "AIzaSyANmMtb9isRBsFSua8QQF6CKLxgClk3OiI",
-  authDomain: "chirp-b7a1a.firebaseapp.com",
-  projectId: "chirp-b7a1a",
-  storageBucket: "chirp-b7a1a.firebasestorage.app",
-  messagingSenderId: "78401639379",
-  appId: "1:78401639379:web:232412aff77b29db261526"
-};
-// -------------------------------------------------------------------------------
+  const firebaseConfig = {
+    apiKey: "AIzaSyANmMtb9isRBsFSua8QQF6CKLxgClk3OiI",
+    authDomain: "chirp-b7a1a.firebaseapp.com",
+    projectId: "chirp-b7a1a",
+    storageBucket: "chirp-b7a1a.firebasestorage.app",
+    messagingSenderId: "78401639379",
+    appId: "1:78401639379:web:232412aff77b29db261526"
+  };
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import {
-  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  signOut, updateProfile, onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-import {
-  getFirestore, collection, addDoc, serverTimestamp,
-  query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc
-} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    signOut, updateProfile, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+  import {
+    getFirestore, collection, addDoc, serverTimestamp,
+    query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc
+  } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-// UI refs
-const loadingScreen = document.getElementById('loading-screen');
-const appRoot = document.getElementById('appRoot');
-const btnShowRegister = document.getElementById('btn-show-register');
-const btnShowLogin = document.getElementById('btn-show-login');
-const registerPanel = document.getElementById('register');
-const signedOut = document.getElementById('signed-out');
-const composerCard = document.getElementById('composer-card');
-const composerWho = document.getElementById('composer-who');
-const txtPost = document.getElementById('txt-post');
-const mediaFile = document.getElementById('mediaFile');
-const recStart = document.getElementById('rec-start');
-const recStop = document.getElementById('rec-stop');
-const recStatus = document.getElementById('rec-status');
-const btnPost = document.getElementById('btn-post');
-const feed = document.getElementById('feed');
-const feedStatus = document.getElementById('feed-status');
-const userArea = document.getElementById('user-area');
-const postMsg = document.getElementById('post-msg');
-const authMsg = document.getElementById('auth-msg');
-const regMsg = document.getElementById('reg-msg');
-const regName = document.getElementById('reg-name');
-const regPhoto = document.getElementById('reg-photo');
-const regEmail = document.getElementById('reg-email');
-const regPass = document.getElementById('reg-pass');
-const inEmail = document.getElementById('in-email');
-const inPass = document.getElementById('in-pass');
+  // elements
+  const btnShowRegister = document.getElementById('btn-show-register');
+  const btnShowLogin = document.getElementById('btn-show-login');
+  const registerPanel = document.getElementById('register');
+  const signedOut = document.getElementById('signed-out');
+  const composerCard = document.getElementById('composer-card');
+  const composerWho = document.getElementById('composer-who');
+  const txtPost = document.getElementById('txt-post');
+  const btnPost = document.getElementById('btn-post');
+  const feed = document.getElementById('feed');
+  const feedStatus = document.getElementById('feed-status');
+  const userArea = document.getElementById('user-area');
+  const postMsg = document.getElementById('post-msg');
+  const authMsg = document.getElementById('auth-msg');
+  const regMsg = document.getElementById('reg-msg');
+  const regName = document.getElementById('reg-name');
+  const regPhoto = document.getElementById('reg-photo');
+  const regEmail = document.getElementById('reg-email');
+  const regPass = document.getElementById('reg-pass');
+  const inEmail = document.getElementById('in-email');
+  const inPass = document.getElementById('in-pass');
 
-// auth buttons
-btnShowRegister.onclick = ()=>{ signedOut.style.display='none'; registerPanel.style.display='block'; };
-btnShowLogin.onclick = ()=>{ signedOut.style.display='block'; registerPanel.style.display='none'; };
+  // toggle forms
+  btnShowRegister.onclick = () => { signedOut.style.display = 'none'; registerPanel.style.display = 'block'; };
+  btnShowLogin.onclick = () => { signedOut.style.display = 'block'; registerPanel.style.display = 'none'; };
 
-document.getElementById('btn-register').onclick = async ()=>{
-  regMsg.textContent='';
-  try{
-    const cred = await createUserWithEmailAndPassword(auth, regEmail.value.trim(), regPass.value);
-    await updateProfile(cred.user, { displayName: regName.value.trim(), photoURL: regPhoto.value.trim()||'' });
-    regMsg.textContent = 'Kayıt başarılı!';
-  }catch(e){ regMsg.textContent = 'Hata: '+e.message; regMsg.className='error'; }
-};
-
-document.getElementById('btn-login').onclick = async ()=>{
-  authMsg.textContent='';
-  try{ await signInWithEmailAndPassword(auth, inEmail.value.trim(), inPass.value); }
-  catch(e){ authMsg.textContent = 'Giriş hatası: '+e.message; authMsg.className='error'; }
-};
-
-document.getElementById('btn-logout').onclick = ()=> signOut(auth);
-
-// --------- Audio recording using MediaRecorder (no server capture) ----------
-let mediaRecorder = null;
-let recordedChunks = [];
-
-recStart.onclick = async () => {
-  recStatus.textContent = '';
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
-    recordedChunks = [];
-    mediaRecorder.ondataavailable = e => { if (e.data.size>0) recordedChunks.push(e.data); };
-    mediaRecorder.onstop = ()=> { recStatus.innerHTML = 'Kayıt hazır'; recStop.disabled = true; recStart.disabled = false; };
-    mediaRecorder.start();
-    recStart.disabled = true;
-    recStop.disabled = false;
-    recStatus.innerHTML = '<span class="rec-dot"></span> Kayıt yapılıyor...';
-  } catch(err){
-    recStatus.textContent = 'Mikrofon erişimi reddedildi veya hata: ' + err.message;
-  }
-};
-
-recStop.onclick = () => {
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-};
-
-// ------------- Helper: upload blob to file.io and return url --------------
-async function uploadToFileIo(blob) {
-  // file.io ücretsiz servis, link ve süre politikaları değişebilir
-  const fd = new FormData();
-  fd.append('file', blob, 'voice-message.webm');
-  // expires param optional: e.g. ?expires=14d
-  const res = await fetch('https://file.io/?expires=14d', { method: 'POST', body: fd });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.message || 'Upload failed');
-  return json.link || json.link || json?.data?.link || json?.url || json?.file || null;
-}
-
-// ---------------- create post (text/image/video/audio) -------------------
-btnPost.onclick = async () => {
-  postMsg.textContent = '';
-  const user = auth.currentUser;
-  if (!user) { postMsg.textContent = 'Önce giriş yapmalısınız.'; postMsg.className='error'; return; }
-
-  const text = txtPost.value.trim();
-  let mediaURL = null;
-  let mediaType = null;
-
-  // if a media file (image/video) selected
-  if (mediaFile.files && mediaFile.files[0]) {
-    const f = mediaFile.files[0];
-    // try to upload to file.io
+  // register
+  document.getElementById('btn-register').onclick = async () => {
+    regMsg.textContent = '';
     try {
-      const link = await uploadToFileIo(f);
-      mediaURL = link;
-      mediaType = f.type.startsWith('image/') ? 'image' : (f.type.startsWith('video/') ? 'video' : 'file');
-    } catch(e) {
-      postMsg.textContent = 'Medya yükleme hatası: '+e.message; postMsg.className='error'; return;
-    }
-  }
+      const cred = await createUserWithEmailAndPassword(auth, regEmail.value.trim(), regPass.value);
+      await updateProfile(cred.user, { displayName: regName.value.trim(), photoURL: regPhoto.value.trim() || "" });
+      regMsg.textContent = "Kayıt başarılı! Giriş yapıldı.";
+    } catch(e){ regMsg.textContent = "Hata: "+e.message; regMsg.className='error'; }
+  };
 
-  // if audio was recorded
-  if (recordedChunks && recordedChunks.length) {
-    const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+  // login
+  document.getElementById('btn-login').onclick = async () => {
+    authMsg.textContent = '';
     try {
-      const link = await uploadToFileIo(blob);
-      mediaURL = link;
-      mediaType = 'audio';
-      // clear recorded data after upload
-      recordedChunks = [];
+      await signInWithEmailAndPassword(auth, inEmail.value.trim(), inPass.value);
+    } catch(e){ authMsg.textContent = "Giriş hatası: "+e.message; authMsg.className='error'; }
+  };
+
+  // logout
+  document.getElementById('btn-logout').onclick = () => signOut(auth);
+
+  // create post
+  btnPost.onclick = async () => {
+    postMsg.textContent = '';
+    const txt = txtPost.value.trim();
+    const user = auth.currentUser;
+    if (!user) { postMsg.textContent = 'Önce giriş yapmalısınız.'; postMsg.className='error'; return; }
+    if (!txt) { postMsg.textContent = 'Boş gönderi gönderilemez.'; postMsg.className='error'; return; }
+    try {
+      await addDoc(collection(db, "posts"), {
+        uid: user.uid,
+        name: user.displayName || "Anonim",
+        photo: user.photoURL || "",
+        text: txt,
+        createdAt: serverTimestamp(),
+        likes: [],
+        comments: []
+      });
+      txtPost.value = "";
+      postMsg.textContent = 'Gönderildi.'; postMsg.className='small';
+      setTimeout(()=>postMsg.textContent='',1200);
     } catch(e) {
-      postMsg.textContent = 'Ses yükleme hatası: '+e.message; postMsg.className='error'; return;
+      postMsg.textContent = 'Gönderme hatası: '+e.message; postMsg.className='error';
     }
-  }
+  };
 
-  if (!text && !mediaURL) { postMsg.textContent = 'Boş gönderi gönderilemez.'; postMsg.className='error'; return; }
+  // realtime feed (render)
+  const postsQuery = query(collection(db, "posts"), orderBy("createdAt","desc"));
+  onSnapshot(postsQuery, (snap)=>{
+    feed.innerHTML = "";
+    const currentUser = auth.currentUser; // snapshot render time
+    snap.forEach(docSnap=>{
+      const data = docSnap.data();
+      const id = docSnap.id;
+      const avatar = data.photo || "https://ui-avatars.com/api/?name=" + encodeURIComponent(data.name || "A");
+      const time = data.createdAt?.toDate().toLocaleString() || "";
+      const likesCount = Array.isArray(data.likes) ? data.likes.length : 0;
+      const comments = Array.isArray(data.comments) ? data.comments : [];
 
-  try {
-    await addDoc(collection(db, 'posts'), {
-      uid: user.uid,
-      name: user.displayName || 'Anonim',
-      photo: user.photoURL || '',
-      text,
-      mediaURL: mediaURL || null,
-      mediaType: mediaType || null,
-      createdAt: serverTimestamp(),
-      likes: [],
-      comments: []
-    });
-    txtPost.value = '';
-    mediaFile.value = '';
-    postMsg.textContent = 'Gönderildi.'; postMsg.className='small';
-    setTimeout(()=>postMsg.textContent='',1200);
-  } catch(e) {
-    postMsg.textContent = 'Gönderme hatası: '+e.message; postMsg.className='error';
-  }
-};
+      const div = document.createElement('div');
+      div.className = 'post';
+      // Buttons: like/comment/delete (delete shown only if currentUser && owner)
+      const isOwner = currentUser && (currentUser.uid === data.uid);
+      const liked = currentUser && Array.isArray(data.likes) && data.likes.includes(currentUser.uid);
 
-// ---------------- realtime feed rendering (shows audio player if audio) ----------
-const postsQuery = query(collection(db, 'posts'), orderBy('createdAt','desc'));
-onSnapshot(postsQuery, snap => {
-  feed.innerHTML = '';
-  const currentUser = auth.currentUser;
-  snap.forEach(docSnap => {
-    const data = docSnap.data(); const id = docSnap.id;
-    const avatar = data.photo || 'https://ui-avatars.com/api/?name='+encodeURIComponent(data.name||'A');
-    const time = data.createdAt?.toDate?.toLocaleString() || '';
-    const likesCount = Array.isArray(data.likes) ? data.likes.length : 0;
-    const comments = Array.isArray(data.comments) ? data.comments : [];
-    const isOwner = currentUser && currentUser.uid === data.uid;
-    const liked = currentUser && Array.isArray(data.likes) && data.likes.includes(currentUser.uid);
-
-    const div = document.createElement('div');
-    div.className = 'post';
-    div.innerHTML = `
-      ${isOwner ? `<button class="delete-btn" data-id="${id}">🗑</button>` : ''}
-      <div class="meta">
-        <img src="${avatar}" class="avatar">
-        <div>
-          <div class="name">${escapeHtml(data.name)}</div>
-          <div class="time">${escapeHtml(time)}</div>
+      div.innerHTML = `
+        ${isOwner ? `<button class="delete-btn" data-id="${id}">🗑</button>` : ''}
+        <div class="meta">
+          <img src="${avatar}" class="avatar">
+          <div>
+            <div class="name">${escapeHtml(data.name)}</div>
+            <div class="time">${escapeHtml(time)}</div>
+          </div>
         </div>
-      </div>
-      <div style="margin:8px 0">${escapeHtml(data.text || '')}</div>
-      <div>
-        ${data.mediaType === 'image' ? `<img src="${escapeHtml(data.mediaURL)}" style="max-width:100%;border-radius:8px">` : ''}
-        ${data.mediaType === 'video' ? `<video controls style="max-width:100%;border-radius:8px"><source src="${escapeHtml(data.mediaURL)}"></video>` : ''}
-        ${data.mediaType === 'audio' ? `<audio controls src="${escapeHtml(data.mediaURL)}" style="width:100%;margin-top:8px"></audio>` : ''}
-      </div>
-      <div class="row small" style="gap:12px;align-items:center;margin-top:8px">
-        <button class="like ${liked ? 'liked':''}" data-id="${id}">❤ <span class="like-count">${likesCount}</span></button>
-        <button class="comment-btn" data-id="${id}">💬 <span class="comment-count">${comments.length}</span></button>
-      </div>
-      <div class="comments">
-        ${comments.map(c=>`<div class="comment"><b>${escapeHtml(c.name)}:</b> ${escapeHtml(c.text)}</div>`).join('')}
-        <div class="comment-input"><input data-comment-id="${id}" placeholder="Yorum yaz ve Enter'a bas..." style="width:100%;padding:8px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:var(--text)"></div>
-      </div>
-    `;
-    feed.appendChild(div);
+        <div style="margin:8px 0">${escapeHtml(data.text)}</div>
+
+        <div class="row small" style="gap:12px;align-items:center">
+          <button class="like ${liked ? 'liked':''}" data-id="${id}">❤ <span class="like-count">${likesCount}</span></button>
+          <button class="comment-btn" data-id="${id}">💬 <span class="comment-count">${comments.length}</span></button>
+        </div>
+
+        <div class="comments">
+          ${comments.map(c => `<div class="comment"><b>${escapeHtml(c.name)}:</b> ${escapeHtml(c.text)}</div>`).join('')}
+          <div class="comment-input">
+            <input data-comment-id="${id}" placeholder="Yorum yaz ve Enter'a bas..." style="width:100%;padding:8px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:var(--text)">
+          </div>
+        </div>
+      `;
+
+      // attach button handlers for delete/like/comment via event delegation below
+      feed.appendChild(div);
+    });
+    feedStatus.textContent = "Güncel";
+  }, err => {
+    feedStatus.textContent = "Bağlantı hatası";
+    console.error('snapshot err', err);
   });
-  feedStatus.textContent = 'Güncel';
-}, err => { feedStatus.textContent = 'Bağlantı hatası'; console.error(err); });
 
-// ----------------- delegated events: like, delete, comment focus ------------
-feed.addEventListener('click', async (ev) => {
-  const el = ev.target; const user = auth.currentUser;
-  if (!user) return alert('Lütfen önce giriş yapın.');
+  // Delegated event handling for feed: like, delete, comment-button, and Enter on comment inputs
+  feed.addEventListener('click', async (ev) => {
+    const el = ev.target;
+    const user = auth.currentUser;
+    if (!user) { alert('Lütfen önce giriş yapın.'); return; }
 
-  // like button
-  const likeBtn = el.closest('.like');
-  if (likeBtn) {
-    const id = likeBtn.dataset.id;
-    const postRef = doc(db,'posts',id);
-    if (likeBtn.classList.contains('liked')) {
-      await updateDoc(postRef, { likes: arrayRemove(user.uid) });
-    } else {
-      await updateDoc(postRef, { likes: arrayUnion(user.uid) });
+    // Like button (or inner span)
+    const likeBtn = el.closest('.like');
+    if (likeBtn) {
+      const id = likeBtn.dataset.id;
+      const postRef = doc(db, 'posts', id);
+      // If already liked -> remove, else add
+      if (likeBtn.classList.contains('liked')) {
+        await updateDoc(postRef, { likes: arrayRemove(user.uid) });
+      } else {
+        await updateDoc(postRef, { likes: arrayUnion(user.uid) });
+      }
+      return;
     }
-    return;
-  }
 
-  // delete
-  const delBtn = el.closest('.delete-btn');
-  if (delBtn) {
-    const id = delBtn.dataset.id;
-    if (!confirm('Silinsin mi?')) return;
-    try { await deleteDoc(doc(db,'posts',id)); }
-    catch(e){ alert('Silme hatası: '+e.message); }
-    return;
-  }
+    // Delete button
+    const delBtn = el.closest('.delete-btn');
+    if (delBtn) {
+      const id = delBtn.dataset.id;
+      if (!confirm('Bu gönderiyi silmek istiyor musun?')) return;
+      try {
+        await deleteDoc(doc(db, 'posts', id));
+      } catch (e) {
+        alert('Silme hatası: ' + e.message);
+      }
+      return;
+    }
 
-  // comment focus
-  const cBtn = el.closest('.comment-btn');
-  if (cBtn) {
-    const id = cBtn.dataset.id;
-    const input = feed.querySelector(`input[data-comment-id="${id}"]`);
-    if (input) input.focus();
-    return;
-  }
-});
+    // Comment button (focus input)
+    const cBtn = el.closest('.comment-btn');
+    if (cBtn) {
+      const id = cBtn.dataset.id;
+      const input = feed.querySelector(`input[data-comment-id="${id}"]`);
+      if (input) input.focus();
+      return;
+    }
+  });
 
-// --------------- Enter ile yorum gönderme ----------------
-feed.addEventListener('keydown', async (ev) => {
-  if (ev.key !== 'Enter') return;
-  const el = ev.target;
-  if (!el.dataset || !el.dataset.commentId) return;
-  ev.preventDefault();
-  const id = el.dataset.commentId; const text = el.value.trim(); const user = auth.currentUser;
-  if (!user) return alert('Giriş yapın');
-  if (!text) return;
-  const postRef = doc(db,'posts',id);
-  try {
-    await updateDoc(postRef, { comments: arrayUnion({ uid: user.uid, name: user.displayName||'Anonim', text }) });
-    el.value = '';
-  } catch(e){ alert('Yorum hatası: '+e.message); }
-});
+  // Enter ile yorum gönderme (keydown)
+  feed.addEventListener('keydown', async (ev) => {
+    if (ev.key !== 'Enter') return;
+    const el = ev.target;
+    if (!el.dataset || !el.dataset.commentId) return;
+    ev.preventDefault();
+    const id = el.dataset.commentId;
+    const text = el.value.trim();
+    const user = auth.currentUser;
+    if (!user) { alert('Lütfen giriş yapın.'); return; }
+    if (!text) return;
+    const postRef = doc(db, 'posts', id);
+    try {
+      await updateDoc(postRef, { comments: arrayUnion({ uid: user.uid, name: user.displayName || 'Anonim', text }) });
+      el.value = '';
+    } catch (e) {
+      alert('Yorum hatası: ' + e.message);
+    }
+  });
 
-// ---------------- Auth state ----------------
-onAuthStateChanged(auth, user => {
-  if (user) {
-    composerCard.style.display = 'block';
-    composerWho.textContent = user.displayName || 'Anonim';
-    userArea.innerHTML = `<img src="${user.photoURL||'https://ui-avatars.com/api/?name='+encodeURIComponent(user.displayName||'A')}" class="avatar" style="width:28px;height:28px;vertical-align:middle;margin-right:8px"> ${escapeHtml(user.displayName||'Anonim')} <button id="mini-logout" class="btn ghost" style="margin-left:8px;padding:6px 8px;font-size:12px">Çık</button>`;
-    const mini = document.getElementById('mini-logout');
-    if (mini) mini.onclick = ()=> signOut(auth);
-  } else {
-    composerCard.style.display = 'none';
-    userArea.textContent = 'Giriş yapılmadı';
-  }
-});
+  // auth state
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      composerCard.style.display = 'block';
+      composerWho.textContent = user.displayName || 'Anonim';
+      userArea.innerHTML = `<img src="${user.photoURL || 'https://ui-avatars.com/api/?name='+encodeURIComponent(user.displayName||'A')}" class="avatar" style="width:28px;height:28px;vertical-align:middle;margin-right:8px"> ${escapeHtml(user.displayName || 'Anonim')} <button id="mini-logout" class="btn ghost" style="margin-left:8px;padding:6px 8px;font-size:12px">Çık</button>`;
+      const mini = document.getElementById('mini-logout');
+      if (mini) mini.onclick = () => signOut(auth);
+    } else {
+      composerCard.style.display = 'none';
+      userArea.textContent = 'Giriş yapılmadı';
+    }
+  });
 
-// ----------------- loader hide on ready ----------------
-window.addEventListener('load', ()=> {
-  setTimeout(()=>{ loadingScreen.classList.add('fade-out'); appRoot.style.display='block'; }, 600);
-});
-
-// ---------------- helpers ----------------
-function escapeHtml(s){ return s ? s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;') : ''; }
+  function escapeHtml(s){ return s ? s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;") : ""; }
 </script>
 </body>
 </html>
-
