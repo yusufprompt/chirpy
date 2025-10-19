@@ -3,84 +3,146 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Chirp — Profil Destekli (Beğeni / Yorum / Silme + Arkadaş & DM)</title>
+<title>Chirp — Profil & Arkadaş/DM (Gelişmiş Tek Dosya)</title>
 <style>
-  :root{--bg:#0f1724;--card:#0b1220;--accent:#1d9bf0;--muted:#94a3b8;--text:#e6eef8}
-  *{box-sizing:border-box}
-  body{font-family:Inter,Segoe UI,Roboto,Arial; margin:0; min-height:100vh;
-    background:linear-gradient(180deg,#071024 0%, #0b1220 100%);
-    color:var(--text); display:flex; align-items:flex-start; justify-content:center; padding:28px;}
-  .app{width:100%;max-width:1200px}
-  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-  h1{font-size:20px;margin:0}
-  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    padding:16px;border-radius:12px; box-shadow:0 6px 24px rgba(2,6,23,0.6); margin-bottom:14px}
-  input,textarea,button{font:inherit}
-  input,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);
-    background:transparent;color:var(--text)}
-  textarea{min-height:80px;resize:vertical}
-  .btn{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:9px;cursor:pointer}
-  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
-  .row{display:flex;gap:12px;align-items:center}
-  .col{display:flex;flex-direction:column;gap:8px}
-  .feed{display:flex;flex-direction:column;gap:10px}
-  .post{padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);
-    background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);position:relative}
-  .meta{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
-  .avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.1)}
-  .name{font-weight:600;color:var(--text)}
-  .time{font-size:12px;color:var(--muted)}
-  .delete-btn{position:absolute;top:8px;right:8px;background:none;border:none;color:#ff8a8a;cursor:pointer;font-size:14px}
-  .like,.comment-btn{background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:13px}
-  .like.liked{color:#ff7b7b}
-  .comments{margin-top:8px}
-  .comment{margin-left:48px;margin-top:6px;padding-left:8px;border-left:1px solid rgba(255,255,255,0.06)}
-  .comment-input{margin-left:48px;margin-top:8px}
-  .small{font-size:13px;color:var(--muted)}
-  .error{color:#ff8a8a}
-  @media(min-width:1000px){ .layout{display:grid;grid-template-columns:320px 1fr 320px; gap:16px} }
-  /* DM panel styles */
-  .dm-panel{display:flex;flex-direction:column;gap:8px;height:calc(100vh - 160px);overflow:hidden}
-  .friends-list{overflow:auto;padding:6px;max-height:220px}
-  .friend-item{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;cursor:pointer}
-  .friend-item:hover{background:rgba(255,255,255,0.01)}
-  .chat-window{flex:1;display:flex;flex-direction:column;border-radius:8px;border:1px solid rgba(255,255,255,0.03);overflow:hidden}
-  .chat-messages{flex:1;padding:8px;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
-  .chat-input{display:flex;gap:8px;padding:8px;border-top:1px solid rgba(255,255,255,0.03)}
-  .emoji-btn{background:transparent;border:0;font-size:18px;cursor:pointer}
-  .msg-bubble{padding:8px;border-radius:8px;margin:6px 0;max-width:75%}
-  .msg-me{background:rgba(29,155,240,0.15);margin-left:auto}
-  .msg-other{background:rgba(255,255,255,0.03)}
-  /* loading screen */
-  #loading-screen{position:fixed;inset:0;background:#0b1220;display:flex;align-items:center;justify-content:center;flex-direction:column;color:var(--text);font-size:18px;z-index:9999;transition:opacity 0.5s ease;}
-  #loading-screen.fade-out{opacity:0;pointer-events:none}
-  .spinner{border:3px solid rgba(255,255,255,0.1);border-top:3px solid var(--accent);border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin-bottom:12px}
-  @keyframes spin{100%{transform:rotate(360deg)}}
+/* ===================================================================
+   Chirp — Tek dosya front-end
+   - Bu dosya HTML/CSS/JS içerir
+   - Özellikler: Kayıt/giriş, gönderi, beğeni, yorum, silme
+                 arkadaş ekleme (kullanıcı adı ile), gelen istekler,
+                 arkadaş listesi, DM (sohbet), emoji, bildirim sesi,
+                 açılış(yükleniyor) ekranı
+   - Kullanıcı adları (displayName) ile arkadaş eklenir (email değil)
+   - Firestore kullanır; ilgili koleksiyonlar: users, posts,
+     friendRequests, conversations/{convId}/messages, notifications
+   =================================================================== */
+
+/* Temel renk ve düzen */
+:root{
+  --bg:#0f1724;
+  --card:#0b1220;
+  --accent:#1d9bf0;
+  --muted:#94a3b8;
+  --text:#e6eef8;
+  --danger:#ff8a8a;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:Inter,Segoe UI,Roboto,Arial,system-ui;
+  margin:0;
+  min-height:100vh;
+  background:linear-gradient(180deg,#071024 0%, #0b1220 100%);
+  color:var(--text);
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:20px;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* App container */
+.app{width:100%;max-width:1200px}
+
+/* Header */
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+h1{font-size:20px;margin:0;font-weight:600}
+.small{font-size:13px;color:var(--muted)}
+
+/* Card */
+.card{
+  background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  padding:14px;border-radius:12px;
+  box-shadow:0 6px 20px rgba(2,6,23,0.6);
+  margin-bottom:12px;
+}
+
+/* Forms & inputs */
+input,textarea,button,select{font:inherit}
+input,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06); background:transparent;color:var(--text)}
+textarea{min-height:80px;resize:vertical}
+
+/* Buttons */
+.btn{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:9px;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+.row{display:flex;gap:10px;align-items:center}
+.col{display:flex;flex-direction:column;gap:8px}
+
+/* Feed & posts */
+.feed{display:flex;flex-direction:column;gap:10px}
+.post{padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);position:relative}
+.meta{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+.avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,0.08)}
+.name{font-weight:600;color:var(--text)}
+.time{font-size:12px;color:var(--muted)}
+.delete-btn{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px}
+.like,.comment-btn{background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:13px}
+.like.liked{color:#ff7b7b}
+.comments{margin-top:8px}
+.comment{margin-left:48px;margin-top:6px;padding-left:8px;border-left:1px solid rgba(255,255,255,0.06)}
+.comment-input{margin-left:48px;margin-top:8px}
+
+/* Layout responsive */
+@media(min-width:1000px){
+  .layout{display:grid;grid-template-columns:320px 1fr 320px;gap:16px}
+}
+
+/* DM panel styles */
+.dm-panel{display:flex;flex-direction:column;gap:8px;height:calc(100vh - 160px);overflow:hidden}
+.friends-list{overflow:auto;padding:6px;max-height:240px}
+.friend-item{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;cursor:pointer}
+.friend-item:hover{background:rgba(255,255,255,0.01)}
+.chat-window{flex:1;display:flex;flex-direction:column;border-radius:8px;border:1px solid rgba(255,255,255,0.03);overflow:hidden}
+.chat-messages{flex:1;padding:10px;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent)}
+.chat-input{display:flex;gap:8px;padding:8px;border-top:1px solid rgba(255,255,255,0.03)}
+.emoji-btn{background:transparent;border:0;font-size:18px;cursor:pointer}
+.msg-bubble{padding:8px;border-radius:8px;margin:6px 0;max-width:75%}
+.msg-me{background:rgba(29,155,240,0.12);margin-left:auto}
+.msg-other{background:rgba(255,255,255,0.03)}
+
+/* Loading screen */
+#loading-screen{position:fixed;inset:0;background:#0b1220;display:flex;align-items:center;justify-content:center;flex-direction:column;color:var(--text);font-size:18px;z-index:9999;transition:opacity .45s ease}
+#loading-screen.fade-out{opacity:0;pointer-events:none}
+.spinner{border:3px solid rgba(255,255,255,0.1);border-top:3px solid var(--accent);border-radius:50%;width:48px;height:48px;animation:spin 1s linear infinite;margin-bottom:12px}
+@keyframes spin{100%{transform:rotate(360deg)}}
+
+/* Extra utility styles */
+.center{display:flex;justify-content:center;align-items:center}
+.error{color:var(--danger)}
+.note{font-size:12px;color:var(--muted);margin-top:6px}
+hr.sep{border:none;height:1px;background:rgba(255,255,255,0.02);margin:12px 0}
 </style>
 </head>
 <body>
 
-<!-- loading -->
+<!-- ===================================================================
+     Yükleniyor ekranı (açılış)
+     =================================================================== -->
 <div id="loading-screen">
   <div class="spinner"></div>
   <div>Chirpy yükleniyor...</div>
+  <div class="note">Bağlantı ve ayarlar kontrol ediliyor — lütfen bekleyin</div>
 </div>
 
+<!-- ===================================================================
+     Uygulama içeriği (tek dosya)
+     =================================================================== -->
 <div class="app">
   <header>
     <h1>Chirp — Profil Destekli</h1>
-    <div id="user-area" class="small"></div>
+    <div id="user-area" class="small">Yükleniyor...</div>
   </header>
 
   <div class="layout">
-    <!-- Left: Auth / Register -->
+    <!-- LEFT: Auth & Info -->
     <div>
       <div class="card" id="auth-card">
         <div id="auth-forms">
           <div id="signed-out">
             <div class="col">
-              <input id="in-email" placeholder="E-posta" type="email">
-              <input id="in-pass" placeholder="Şifre" type="password">
+              <input id="in-email" placeholder="E-posta" type="email" autocomplete="username">
+              <input id="in-pass" placeholder="Şifre" type="password" autocomplete="current-password">
               <div class="row">
                 <button class="btn" id="btn-login">Giriş Yap</button>
                 <button class="btn ghost" id="btn-show-register">Kayıt Ol</button>
@@ -91,15 +153,15 @@
 
           <div id="register" style="display:none">
             <div class="col">
-              <input id="reg-name" placeholder="Görünen ad" type="text">
-              <input id="reg-photo" placeholder="Profil fotoğrafı URL (isteğe bağlı)" type="text">
-              <input id="reg-email" placeholder="E-posta" type="email">
-              <input id="reg-pass" placeholder="Şifre" type="password">
+              <input id="reg-name" placeholder="Kullanıcı adı (benzersiz olmalı)" type="text" autocomplete="name">
+              <input id="reg-email" placeholder="E-posta" type="email" autocomplete="email">
+              <input id="reg-pass" placeholder="Şifre (6+ karakter)" type="password" autocomplete="new-password">
               <div class="row">
                 <button class="btn" id="btn-register">Kayıt Ol</button>
                 <button class="btn ghost" id="btn-show-login">Girişe Dön</button>
               </div>
               <div id="reg-msg" class="small"></div>
+              <div class="note">Kullanıcı adınızı arkadaş eklerken kullanacaksınız (email değil).</div>
             </div>
           </div>
         </div>
@@ -109,18 +171,19 @@
         <div style="font-weight:600;margin-bottom:8px">Nasıl çalışır?</div>
         - Email/şifre ile oturum açın veya kayıt olun. <br>
         - Gönderi yazın → feed güncellenir. <br>
-        - Arkadaş ekleyin, gelen istekleri kabul edin, sağ taraftan DM atın.
+        - Arkadaş ekleyin (kullanıcı adı ile), gelen istekleri kabul edin. <br>
+        - Sağ panelden arkadaşlara DM atın; yeni mesajlar için ses/bildirim gösterilir.
       </div>
     </div>
 
-    <!-- Middle: Posts -->
+    <!-- MIDDLE: Composer + Feed -->
     <div>
       <div class="card" id="composer-card" style="display:none">
         <div class="col">
           <div><strong id="composer-who"></strong> olarak paylaşılıyor</div>
-          <textarea id="txt-post" maxlength="280" placeholder="Ne oluyor?"></textarea>
+          <textarea id="txt-post" maxlength="1000" placeholder="Ne oluyor? (emoji destekli)"></textarea>
           <div class="row" style="justify-content:space-between">
-            <div class="small">@Herkese açık gönderi</div>
+            <div class="small">@Herkese açık gönderi • Emoji kullanılabilir</div>
             <div>
               <button class="btn" id="btn-post">Gönder</button>
               <button class="btn ghost" id="btn-logout">Çıkış</button>
@@ -139,7 +202,7 @@
       </div>
     </div>
 
-    <!-- Right: Friends + DM -->
+    <!-- RIGHT: Friends & DM -->
     <div>
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -148,11 +211,11 @@
         </div>
 
         <div class="dm-panel">
-          <!-- Add friend -->
+          <!-- Add friend (Kullanıcı adı ile) -->
           <div style="margin-bottom:8px">
-            <div class="small" style="margin-bottom:6px">E-posta ile arkadaş ekle</div>
+            <div class="small" style="margin-bottom:6px">Kullanıcı adı ile arkadaş ekle</div>
             <div style="display:flex;gap:8px">
-              <input id="add-email" placeholder="kisi@ornek.com" type="email" style="flex:1">
+              <input id="add-name" placeholder="kullaniciadi" type="text" style="flex:1">
               <button id="btn-add-friend" class="btn">Ekle</button>
             </div>
             <div id="add-msg" class="small"></div>
@@ -164,17 +227,17 @@
             <div id="requests" class="friends-list small"></div>
           </div>
 
-          <!-- Friends list -->
-          <div style="font-weight:600;margin-bottom:6px">Arkadaşlar</div>
+          <!-- Friends list (Altta) -->
+          <div style="font-weight:600;margin-bottom:6px">Arkadaşlar (liste)</div>
           <div id="friends" class="friends-list"></div>
 
           <!-- Chat -->
           <div style="font-weight:600;margin-top:8px">Sohbet</div>
           <div class="chat-window">
-            <div id="chat-with" class="small" style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.03)"></div>
+            <div id="chat-with" class="small" style="padding:8px;border-bottom:1px solid rgba(255,255,255,0.03)">Bir arkadaş seçin</div>
             <div id="chat-messages" class="chat-messages"></div>
             <div class="chat-input">
-              <div>
+              <div style="display:flex;gap:6px">
                 <button class="emoji-btn" data-emoji="😊">😊</button>
                 <button class="emoji-btn" data-emoji="😂">😂</button>
                 <button class="emoji-btn" data-emoji="❤️">❤️</button>
@@ -184,15 +247,22 @@
               <button id="dm-send" class="btn">Gönder</button>
             </div>
           </div>
+
         </div>
       </div>
-
     </div>
   </div>
 </div>
 
+<!-- ===================================================================
+     Script bölümünde tüm mantık (Firebase + UI + özellikler)
+     - Lütfen kendi Firestore güvenlik kurallarınızı uygun şekilde yapın.
+     - Bu örnek eğitim amaçlıdır.
+     =================================================================== -->
 <script type="module">
-/* ---------- Firebase init ---------- */
+/* -----------------------------
+   Firebase config (senin verdiğin)
+   ----------------------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyANmMtb9isRBsFSua8QQF6CKLxgClk3OiI",
   authDomain: "chirp-b7a1a.firebaseapp.com",
@@ -202,6 +272,9 @@ const firebaseConfig = {
   appId: "1:78401639379:web:232412aff77b29db261526"
 };
 
+/* -----------------------------
+   Firebase modüller (modular v9+)
+   ----------------------------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
@@ -209,14 +282,20 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 import {
   getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot,
-  doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, where, getDocs, getDoc, setDoc
+  doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, where, getDocs, getDoc, setDoc,
+  collectionGroup, limit
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
+/* -----------------------------
+   Initialize
+   ----------------------------- */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* ---------- DOM references ---------- */
+/* -----------------------------
+   DOM refs (büyük liste)
+   ----------------------------- */
 const btnShowRegister = document.getElementById('btn-show-register');
 const btnShowLogin = document.getElementById('btn-show-login');
 const registerPanel = document.getElementById('register');
@@ -232,14 +311,12 @@ const postMsg = document.getElementById('post-msg');
 const authMsg = document.getElementById('auth-msg');
 const regMsg = document.getElementById('reg-msg');
 const regName = document.getElementById('reg-name');
-const regPhoto = document.getElementById('reg-photo');
 const regEmail = document.getElementById('reg-email');
 const regPass = document.getElementById('reg-pass');
 const inEmail = document.getElementById('in-email');
 const inPass = document.getElementById('in-pass');
 
-/* Friends / DM DOM */
-const addEmail = document.getElementById('add-email');
+const addName = document.getElementById('add-name');
 const btnAddFriend = document.getElementById('btn-add-friend');
 const addMsg = document.getElementById('add-msg');
 const requestsBox = document.getElementById('requests');
@@ -249,48 +326,120 @@ const chatMessages = document.getElementById('chat-messages');
 const dmInput = document.getElementById('dm-input');
 const dmSend = document.getElementById('dm-send');
 const emojiBtns = document.querySelectorAll('.emoji-btn');
+const loadingScreen = document.getElementById('loading-screen');
+const addEmailUnused = null; // placeholder to remind: we use username now
 
-/* ---------- Helper functions ---------- */
-function escapeHtml(s){ return s ? s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;") : ""; }
+/* -----------------------------
+   Helpers
+   ----------------------------- */
+function escapeHtml(s){ return s ? String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;") : ""; }
 function convId(a,b){ return [a,b].sort().join('_'); } // deterministic conversation id
 function shortTime(ts){ try { return ts.toDate().toLocaleString(); } catch(e){ return ""; } }
 
-/* ---------- Create user doc on registration ---------- */
-async function ensureUserDoc(user) {
+/* play notification sound */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playBeep(){
+  try{
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.type='sine'; o.frequency.value=880;
+    g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.05, audioCtx.currentTime+0.01);
+    o.start();
+    setTimeout(()=>{ g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+0.15); o.stop(audioCtx.currentTime+0.2); }, 180);
+  }catch(e){}
+}
+
+/* show desktop notification (if permission) */
+async function showDesktopNotification(title, body){
+  if (!("Notification" in window)) return;
+  if (Notification.permission === "granted"){
+    try{
+      const n = new Notification(title, { body, silent: true });
+      // click focuses the window
+      n.onclick = ()=> window.focus();
+    }catch(e){}
+  } else if (Notification.permission !== "denied") {
+    try {
+      const p = await Notification.requestPermission();
+      if (p === "granted") {
+        showDesktopNotification(title, body);
+      }
+    } catch(e){}
+  }
+}
+
+/* -----------------------------
+   Ensure user doc (users collection)
+   - users doc key = uid
+   - fields: uid, name (username), email, photo, friends: []
+   ----------------------------- */
+async function ensureUserDoc(user){
   if (!user) return;
   const userDocRef = doc(db, 'users', user.uid);
   const snap = await getDoc(userDocRef);
-  if (!snap.exists()) {
+  if (!snap.exists()){
+    // create minimal doc
     await setDoc(userDocRef, {
       uid: user.uid,
-      email: user.email || "",
       name: user.displayName || "",
+      email: user.email || "",
       photo: user.photoURL || "",
       friends: []
     });
   } else {
-    // keep profile fields up to date
-    await updateDoc(userDocRef, {
-      email: user.email || "",
-      name: user.displayName || "",
-      photo: user.photoURL || ""
-    }).catch(()=>{});
+    // try to keep profile fields updated (best-effort)
+    try{
+      await updateDoc(userDocRef, {
+        name: user.displayName || "",
+        email: user.email || "",
+        photo: user.photoURL || ""
+      });
+    }catch(e){}
   }
 }
 
-/* ---------- Auth UI handlers (kept from original) ---------- */
-btnShowRegister.onclick = () => { signedOut.style.display = 'none'; registerPanel.style.display = 'block'; };
-btnShowLogin.onclick = () => { signedOut.style.display = 'block'; registerPanel.style.display = 'none'; };
+/* -----------------------------
+   Auth UI handlers
+   ----------------------------- */
+btnShowRegister && (btnShowRegister.onclick = () => {
+  signedOut.style.display = 'none';
+  registerPanel.style.display = 'block';
+  authMsg.textContent = ''; regMsg.textContent = '';
+});
+btnShowLogin && (btnShowLogin.onclick = () => {
+  signedOut.style.display = 'block';
+  registerPanel.style.display = 'none';
+  authMsg.textContent = ''; regMsg.textContent = '';
+});
 
-// register: create auth user + update profile + users collection doc
+// register: create auth user + set displayName (kullanıcı adı) + ensure users doc
 document.getElementById('btn-register').onclick = async () => {
   regMsg.textContent = '';
+  const name = regName.value.trim();
+  const email = regEmail.value.trim();
+  const pass = regPass.value;
+  if (!name || !email || pass.length < 6){ regMsg.textContent = 'Tüm alanlar gerekli (şifre 6+).'; regMsg.className='error'; return; }
   try {
-    const cred = await createUserWithEmailAndPassword(auth, regEmail.value.trim(), regPass.value);
-    await updateProfile(cred.user, { displayName: regName.value.trim(), photoURL: regPhoto.value.trim() || "" });
+    // check if username already exists (users collection where name == name)
+    const q = query(collection(db,'users'), where('name','==', name), limit(1));
+    const snaps = await getDocs(q);
+    if (!snaps.empty){
+      regMsg.textContent = 'Bu kullanıcı adı zaten alınmış. Başka bir ad seçin.'; regMsg.className='error';
+      return;
+    }
+
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    await updateProfile(cred.user, { displayName: name });
     await ensureUserDoc(cred.user);
     regMsg.textContent = "Kayıt başarılı! Giriş yapıldı.";
-  } catch(e){ regMsg.textContent = "Hata: "+e.message; regMsg.className='error'; }
+    regMsg.className = 'small';
+    // clear inputs (UX)
+    regName.value=''; regEmail.value=''; regPass.value='';
+  } catch(e){
+    regMsg.textContent = "Kayıt hatası: "+e.message; regMsg.className='error';
+  }
 };
 
 // login
@@ -298,116 +447,112 @@ document.getElementById('btn-login').onclick = async () => {
   authMsg.textContent = '';
   try {
     await signInWithEmailAndPassword(auth, inEmail.value.trim(), inPass.value);
-  } catch(e){ authMsg.textContent = "Giriş hatası: "+e.message; authMsg.className='error'; }
+    inEmail.value=''; inPass.value='';
+  } catch(e){
+    authMsg.textContent = "Giriş hatası: "+e.message; authMsg.className='error';
+  }
 };
 
 // logout
 document.getElementById('btn-logout').onclick = () => signOut(auth);
 
-/* ---------- Posts (kept from original) ---------- */
+/* -----------------------------
+   Posting (feed)
+   ----------------------------- */
 btnPost.onclick = async () => {
   postMsg.textContent = '';
   const txt = txtPost.value.trim();
   const user = auth.currentUser;
-  if (!user) { postMsg.textContent = 'Önce giriş yapmalısınız.'; postMsg.className='error'; return; }
-  if (!txt) { postMsg.textContent = 'Boş gönderi gönderilemez.'; postMsg.className='error'; return; }
-  try {
-    await addDoc(collection(db, "posts"), {
+  if (!user){ postMsg.textContent = 'Önce giriş yapmalısınız.'; postMsg.className='error'; return; }
+  if (!txt){ postMsg.textContent = 'Boş gönderi gönderilemez.'; postMsg.className='error'; return; }
+  try{
+    await addDoc(collection(db,'posts'), {
       uid: user.uid,
-      name: user.displayName || "Anonim",
-      photo: user.photoURL || "",
+      name: user.displayName || 'Anonim',
       text: txt,
       createdAt: serverTimestamp(),
       likes: [],
       comments: []
     });
-    txtPost.value = "";
+    txtPost.value = '';
     postMsg.textContent = 'Gönderildi.'; postMsg.className='small';
     setTimeout(()=>postMsg.textContent='',1200);
-  } catch(e) {
-    postMsg.textContent = 'Gönderme hatası: '+e.message; postMsg.className='error';
+  } catch(e){
+    postMsg.textContent = 'Gönderme hatası: ' + e.message; postMsg.className='error';
   }
 };
 
-const postsQuery = query(collection(db, "posts"), orderBy("createdAt","desc"));
-onSnapshot(postsQuery, (snap)=>{
-  feed.innerHTML = "";
+/* -----------------------------
+   Real-time feed listener
+   ----------------------------- */
+const postsQuery = query(collection(db,'posts'), orderBy('createdAt','desc'));
+onSnapshot(postsQuery, snap => {
+  feed.innerHTML = '';
   const currentUser = auth.currentUser;
-  snap.forEach(docSnap=>{
+  snap.forEach(docSnap => {
     const data = docSnap.data();
     const id = docSnap.id;
-    const avatar = data.photo || "https://ui-avatars.com/api/?name=" + encodeURIComponent(data.name || "A");
-    const time = data.createdAt?.toDate().toLocaleString() || "";
+    const avatar = data.photo || ("https://ui-avatars.com/api/?name="+encodeURIComponent(data.name||'A'));
+    const time = data.createdAt ? data.createdAt.toDate().toLocaleString() : '';
     const likesCount = Array.isArray(data.likes) ? data.likes.length : 0;
     const comments = Array.isArray(data.comments) ? data.comments : [];
-
-    const div = document.createElement('div');
-    div.className = 'post';
     const isOwner = currentUser && (currentUser.uid === data.uid);
     const liked = currentUser && Array.isArray(data.likes) && data.likes.includes(currentUser.uid);
 
+    const div = document.createElement('div');
+    div.className = 'post';
     div.innerHTML = `
-      ${isOwner ? `<button class="delete-btn" data-id="${id}">🗑</button>` : ''}
+      ${isOwner ? `<button class="delete-btn" data-id="${id}" title="Sil">🗑</button>` : ''}
       <div class="meta">
-        <img src="${avatar}" class="avatar">
+        <img src="${avatar}" class="avatar" alt="avatar">
         <div>
           <div class="name">${escapeHtml(data.name)}</div>
           <div class="time">${escapeHtml(time)}</div>
         </div>
       </div>
       <div style="margin:8px 0">${escapeHtml(data.text)}</div>
-
       <div class="row small" style="gap:12px;align-items:center">
         <button class="like ${liked ? 'liked':''}" data-id="${id}">❤ <span class="like-count">${likesCount}</span></button>
         <button class="comment-btn" data-id="${id}">💬 <span class="comment-count">${comments.length}</span></button>
       </div>
-
       <div class="comments">
         ${comments.map(c => `<div class="comment"><b>${escapeHtml(c.name)}:</b> ${escapeHtml(c.text)}</div>`).join('')}
-        <div class="comment-input">
-          <input data-comment-id="${id}" placeholder="Yorum yaz ve Enter'a bas..." style="width:100%;padding:8px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:var(--text)">
-        </div>
+        <div class="comment-input"><input data-comment-id="${id}" placeholder="Yorum yaz ve Enter'a bas..." style="width:100%;padding:8px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:var(--text)"></div>
       </div>
     `;
     feed.appendChild(div);
   });
   feedStatus.textContent = "Güncel";
 }, err => {
-  feedStatus.textContent = "Bağlantı hatası";
-  console.error('snapshot err', err);
+  feedStatus.textContent = "Bağlantı hatası"; console.error('snapshot err', err);
 });
 
-feed.addEventListener('click', async (ev) => {
+/* Delegated event handling for feed buttons (like, delete, comment focus) */
+feed.addEventListener('click', async ev => {
   const el = ev.target;
   const user = auth.currentUser;
-  if (!user) { alert('Lütfen önce giriş yapın.'); return; }
-
+  // like
   const likeBtn = el.closest('.like');
-  if (likeBtn) {
+  if (likeBtn){
+    if (!user){ alert('Lütfen önce giriş yapın.'); return; }
     const id = likeBtn.dataset.id;
-    const postRef = doc(db, 'posts', id);
-    if (likeBtn.classList.contains('liked')) {
-      await updateDoc(postRef, { likes: arrayRemove(user.uid) });
-    } else {
-      await updateDoc(postRef, { likes: arrayUnion(user.uid) });
-    }
+    const postRef = doc(db,'posts', id);
+    if (likeBtn.classList.contains('liked')) await updateDoc(postRef, { likes: arrayRemove(user.uid) });
+    else await updateDoc(postRef, { likes: arrayUnion(user.uid) });
     return;
   }
-
+  // delete
   const delBtn = el.closest('.delete-btn');
-  if (delBtn) {
+  if (delBtn){
+    if (!user){ alert('Giriş yapmalısın'); return; }
     const id = delBtn.dataset.id;
     if (!confirm('Bu gönderiyi silmek istiyor musun?')) return;
-    try {
-      await deleteDoc(doc(db, 'posts', id));
-    } catch (e) {
-      alert('Silme hatası: ' + e.message);
-    }
+    try { await deleteDoc(doc(db,'posts', id)); } catch(e){ alert('Silme hatası: '+e.message); }
     return;
   }
-
+  // focus comment input
   const cBtn = el.closest('.comment-btn');
-  if (cBtn) {
+  if (cBtn){
     const id = cBtn.dataset.id;
     const input = feed.querySelector(`input[data-comment-id="${id}"]`);
     if (input) input.focus();
@@ -415,7 +560,8 @@ feed.addEventListener('click', async (ev) => {
   }
 });
 
-feed.addEventListener('keydown', async (ev) => {
+/* Enter ile yorum gönderme */
+feed.addEventListener('keydown', async ev => {
   if (ev.key !== 'Enter') return;
   const el = ev.target;
   if (!el.dataset || !el.dataset.commentId) return;
@@ -425,61 +571,59 @@ feed.addEventListener('keydown', async (ev) => {
   const user = auth.currentUser;
   if (!user) { alert('Lütfen giriş yapın.'); return; }
   if (!text) return;
-  const postRef = doc(db, 'posts', id);
+  const postRef = doc(db,'posts', id);
   try {
     await updateDoc(postRef, { comments: arrayUnion({ uid: user.uid, name: user.displayName || 'Anonim', text }) });
     el.value = '';
-  } catch (e) {
-    alert('Yorum hatası: ' + e.message);
-  }
+  } catch(e){ alert('Yorum hatası: '+e.message); }
 });
 
-/* ---------- Friends & Friend Requests ---------- */
-
-// send friend request by email
+/* -----------------------------
+   Friend requests (by username)
+   ----------------------------- */
 btnAddFriend.onclick = async () => {
   addMsg.textContent = '';
-  const email = addEmail.value.trim().toLowerCase();
+  const name = (addName.value || '').trim();
   const me = auth.currentUser;
-  if (!me) { addMsg.textContent = 'Önce giriş yapmalısınız.'; addMsg.className='error'; return; }
-  if (!email) { addMsg.textContent = 'E-posta girin.'; addMsg.className='error'; return; }
-
+  if (!me){ addMsg.textContent = 'Önce giriş yapmalısınız.'; addMsg.className='error'; return; }
+  if (!name){ addMsg.textContent = 'Kullanıcı adı girin.'; addMsg.className='error'; return; }
   try {
-    // find user by email
-    const q = query(collection(db, 'users'), where('email', '==', email), );
+    // search users collection by 'name' (username)
+    const q = query(collection(db,'users'), where('name','==', name), limit(1));
     const snaps = await getDocs(q);
-    if (snaps.empty) { addMsg.textContent = 'Kullanıcı bulunamadı.'; addMsg.className='error'; return; }
-    const toDoc = snaps.docs[0];
-    const toUid = toDoc.id;
-    if (toUid === me.uid) { addMsg.textContent = 'Kendi kendine ekleyemezsin.'; addMsg.className='error'; return; }
+    if (snaps.empty){ addMsg.textContent = 'Kullanıcı bulunamadı.'; addMsg.className='error'; return; }
+    const destDoc = snaps.docs[0];
+    const toUid = destDoc.id;
+    if (toUid === me.uid){ addMsg.textContent = 'Kendinizi ekleyemezsiniz.'; addMsg.className='error'; return; }
 
     // check existing friendship
-    const meRef = doc(db, 'users', me.uid);
-    const meSnap = await getDoc(meRef);
-    const meData = meSnap.data() || {};
-    if (Array.isArray(meData.friends) && meData.friends.includes(toUid)) {
-      addMsg.textContent = 'Zaten arkadaşsınız.'; addMsg.className='small'; return;
-    }
+    const meSnap = await getDoc(doc(db,'users',me.uid));
+    const meData = meSnap.exists() ? meSnap.data() : {};
+    if (Array.isArray(meData.friends) && meData.friends.includes(toUid)){ addMsg.textContent = 'Zaten arkadaşsınız.'; addMsg.className='small'; return; }
 
-    // create friend request doc
-    await addDoc(collection(db, 'friendRequests'), {
+    // check existing pending requests (optional)
+    const rQuery = query(collection(db,'friendRequests'), where('fromUid','==', me.uid), where('toUid','==', toUid));
+    const rSnaps = await getDocs(rQuery);
+    if (!rSnaps.empty){ addMsg.textContent = 'İstek zaten gönderilmiş.'; addMsg.className='small'; return; }
+
+    // create friend request
+    await addDoc(collection(db,'friendRequests'), {
       fromUid: me.uid,
       toUid,
       fromName: me.displayName || '',
-      toName: toDoc.data().name || '',
+      toName: destDoc.data().name || '',
       status: 'pending',
       createdAt: serverTimestamp()
     });
-    addMsg.textContent = 'İstek gönderildi.';
-    addMsg.className='small';
-    addEmail.value = '';
-  } catch (e) {
+    addMsg.textContent = 'İstek gönderildi.'; addMsg.className='small';
+    addName.value = '';
+  } catch(e){
     addMsg.textContent = 'Hata: ' + e.message; addMsg.className='error';
   }
 };
 
-// render incoming friend requests (real-time)
-onSnapshot(query(collection(db, 'friendRequests'), orderBy('createdAt','desc')), snap => {
+/* Real-time render of incoming friend requests (only those to me) */
+onSnapshot(query(collection(db,'friendRequests'), orderBy('createdAt','desc')), snap => {
   const me = auth.currentUser;
   requestsBox.innerHTML = '';
   if (!me) return;
@@ -497,70 +641,82 @@ onSnapshot(query(collection(db, 'friendRequests'), orderBy('createdAt','desc')),
   });
 });
 
-// accept / decline via delegation
-requestsBox.addEventListener('click', async (ev) => {
+/* Accept/decline incoming requests */
+requestsBox.addEventListener('click', async ev => {
   const accept = ev.target.dataset.accept;
   const decline = ev.target.dataset.decline;
-  if (accept) {
-    const rRef = doc(db, 'friendRequests', accept);
+  if (accept){
+    const rRef = doc(db,'friendRequests', accept);
     const rSnap = await getDoc(rRef);
     if (!rSnap.exists()) return;
     const r = rSnap.data();
-    try {
-      // add to both users' friends arrays
+    try{
+      // add to both users
       await updateDoc(doc(db,'users', r.toUid), { friends: arrayUnion(r.fromUid) });
       await updateDoc(doc(db,'users', r.fromUid), { friends: arrayUnion(r.toUid) });
-      // delete request
       await deleteDoc(rRef);
     } catch(e){ alert('Kabul hatası: '+e.message); }
-  } else if (decline) {
-    await deleteDoc(doc(db,'friendRequests', decline));
+  } else if (decline){
+    try{ await deleteDoc(doc(db,'friendRequests', decline)); } catch(e){ alert('Reddetme hatası: '+e.message); }
   }
 });
 
-/* ---------- Friends list realtime ---------- */
+/* -----------------------------
+   Friends list: realtime (listen to users/<me>.friends)
+   ----------------------------- */
 let friendsUnsub = null;
-function listenFriends(uid){
+async function listenFriends(uid){
   if (friendsUnsub) friendsUnsub();
   const userDocRef = doc(db,'users', uid);
-  // listen to user doc for friends array updates
   friendsUnsub = onSnapshot(userDocRef, async snap => {
-    if (!snap.exists()) { friendsBox.innerHTML = ''; return; }
+    if (!snap.exists()){ friendsBox.innerHTML = ''; return; }
     const data = snap.data();
     const friends = Array.isArray(data.friends) ? data.friends : [];
     friendsBox.innerHTML = '';
-    // for each friend uid, fetch user info
-    for (const fid of friends) {
+    // populate friend items
+    for (const fid of friends){
       try {
         const fSnap = await getDoc(doc(db,'users', fid));
-        const f = fSnap.data() || {};
+        const f = fSnap.exists() ? fSnap.data() : { name: 'Anonim', email: '' };
         const item = document.createElement('div');
         item.className = 'friend-item';
-        item.innerHTML = `<div style="display:flex;align-items:center;gap:8px"><img src="${f.photo || 'https://ui-avatars.com/api/?name='+encodeURIComponent(f.name||'A')}" style="width:34px;height:34px;border-radius:50%"><div><div style="font-weight:600">${escapeHtml(f.name||'Anonim')}</div><div class="small">${escapeHtml(f.email||'')}</div></div></div>
-          <div style="display:flex;gap:6px"><button class="btn" data-chat="${fid}">Chat</button><button class="btn ghost" data-unfriend="${fid}">Kaldır</button></div>`;
+        item.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
+          <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center">${(f.name||'A')[0]||'A'}</div>
+          <div><div style="font-weight:600">${escapeHtml(f.name||'Anonim')}</div><div class="small">${escapeHtml(f.email||'')}</div></div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn" data-chat="${fid}">Chat</button>
+          <button class="btn ghost" data-unfriend="${fid}">Kaldır</button>
+        </div>`;
         friendsBox.appendChild(item);
       } catch(e){}
     }
   });
 }
 
-// unfriend
-friendsBox.addEventListener('click', async (ev) => {
+/* Unfriend / open chat actions */
+friendsBox.addEventListener('click', async ev => {
   const un = ev.target.dataset.unfriend;
   const chat = ev.target.dataset.chat;
   const me = auth.currentUser;
-  if (un) {
+  if (un){
+    if (!me) return alert('Giriş yapın');
     if (!confirm('Arkadaşı kaldırmak istiyor musun?')) return;
-    try {
+    try{
       await updateDoc(doc(db,'users', me.uid), { friends: arrayRemove(un) });
       await updateDoc(doc(db,'users', un), { friends: arrayRemove(me.uid) });
     } catch(e){ alert('Hata: '+e.message); }
-  } else if (chat) {
+  } else if (chat){
     openChatWith(chat);
   }
 });
 
-/* ---------- DM (conversations) ---------- */
+/* -----------------------------
+   DM conversations
+   - conversations collection: doc id = convId (uid_uid)
+   - messages subcollection: conversations/{convId}/messages
+   - notifications collection: used to notify recipient for new messages
+   ----------------------------- */
 let currentConv = null;
 let convUnsub = null;
 
@@ -572,74 +728,150 @@ function openChatWith(friendUid){
   currentConv = { id, friendUid };
   chatWith.textContent = 'Sohbet: ' + friendUid;
   chatMessages.innerHTML = '';
-  // listen messages
+  // listen to messages for this conversation
   const msgsQuery = query(collection(db, 'conversations', id, 'messages'), orderBy('createdAt','asc'));
   convUnsub = onSnapshot(msgsQuery, snap => {
     chatMessages.innerHTML = '';
-    snap.forEach(m=> {
+    snap.forEach(m => {
       const md = m.data();
+      const meIs = md.from === me.uid;
       const el = document.createElement('div');
-      el.className = 'msg-bubble ' + (md.from === me.uid ? 'msg-me' : 'msg-other');
-      el.innerHTML = `<div style="font-size:12px;color:var(--muted)">${escapeHtml(md.name||md.from)}</div><div>${escapeHtml(md.text)}</div><div class="small">${shortTime(md.createdAt)}</div>`;
+      el.className = 'msg-bubble ' + (meIs ? 'msg-me' : 'msg-other');
+      el.innerHTML = `<div style="font-size:12px;color:var(--muted)">${escapeHtml(md.name||md.from)}</div>
+        <div style="white-space:pre-wrap">${escapeHtml(md.text)}</div>
+        <div class="small">${shortTime(md.createdAt)}</div>`;
       chatMessages.appendChild(el);
     });
     chatMessages.scrollTop = chatMessages.scrollHeight;
   });
 }
 
-// send DM
+/* send DM + create notification doc for recipient */
 dmSend.onclick = async () => {
   const txt = dmInput.value.trim();
   const me = auth.currentUser;
   if (!me) return alert('Giriş yapmalısın');
   if (!currentConv) return alert('Önce bir arkadaş seçin.');
   if (!txt) return;
-  const convRef = doc(db, 'conversations', currentConv.id);
-  // ensure conversation doc exists
-  await setDoc(convRef, { participants: currentConv.id.split('_') }, { merge: true });
-  await addDoc(collection(db, 'conversations', currentConv.id, 'messages'), {
-    from: me.uid,
-    name: me.displayName || '',
-    text: txt,
-    createdAt: serverTimestamp()
-  });
-  dmInput.value = '';
+  try{
+    const convRef = doc(db, 'conversations', currentConv.id);
+    await setDoc(convRef, { participants: currentConv.id.split('_'), lastUpdated: serverTimestamp() }, { merge: true });
+    await addDoc(collection(db, 'conversations', currentConv.id, 'messages'), {
+      from: me.uid,
+      name: me.displayName || '',
+      text: txt,
+      createdAt: serverTimestamp()
+    });
+    // create notification for recipient
+    const toUid = currentConv.friendUid;
+    await addDoc(collection(db,'notifications'), {
+      to: toUid,
+      from: me.uid,
+      name: me.displayName || '',
+      text: txt,
+      read: false,
+      createdAt: serverTimestamp()
+    });
+    dmInput.value = '';
+  } catch(e){ alert('Mesaj gönderme hatası: ' + e.message); }
 };
 
-// emoji buttons
-emojiBtns.forEach(b => {
-  b.addEventListener('click', ()=> {
-    dmInput.value += b.dataset.emoji;
-    dmInput.focus();
-  });
-});
+/* emoji buttons to append into dmInput */
+emojiBtns.forEach(b => b.addEventListener('click', ()=> {
+  dmInput.value += b.dataset.emoji;
+  dmInput.focus();
+}));
 
-/* ---------- Auth state: ensure user doc, listen friends ---------- */
+/* -----------------------------
+   Notifications system (based on notifications collection)
+   - listen for notifications where to == me.uid and read == false
+   - when new arrives: play sound, show desktop notification, mark read true
+   ----------------------------- */
+let notifUnsub = null;
+function listenNotifications(uid){
+  if (notifUnsub) notifUnsub();
+  const q = query(collection(db,'notifications'), where('to','==', uid), where('read','==', false), orderBy('createdAt','desc'));
+  notifUnsub = onSnapshot(q, snap => {
+    snap.forEach(async d => {
+      const n = d.data();
+      // show in-app sound + desktop notification
+      playBeep();
+      showDesktopNotification(n.name || 'Yeni mesaj', n.text ? (n.text.length>80 ? n.text.slice(0,80)+'…' : n.text) : 'Yeni bildirim');
+      // mark read (best-effort)
+      try{ await updateDoc(doc(db,'notifications', d.id), { read: true }); } catch(e){}
+    });
+  }, err => { console.error('notif err', err); });
+}
+
+/* -----------------------------
+   Auth state changes: show UI, ensure user doc, start listeners
+   ----------------------------- */
 onAuthStateChanged(auth, async user => {
   if (user){
     await ensureUserDoc(user);
     composerCard.style.display = 'block';
     composerWho.textContent = user.displayName || 'Anonim';
-    userArea.innerHTML = `<img src="${user.photoURL || 'https://ui-avatars.com/api/?name='+encodeURIComponent(user.displayName||'A')}" class="avatar" style="width:28px;height:28px;vertical-align:middle;margin-right:8px"> ${escapeHtml(user.displayName || 'Anonim')} <button id="mini-logout" class="btn ghost" style="margin-left:8px;padding:6px 8px;font-size:12px">Çık</button>`;
+    userArea.innerHTML = `<div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center">${(user.displayName||'A')[0]||'A'}</div>${escapeHtml(user.displayName||'Anonim')} <button id="mini-logout" class="btn ghost" style="margin-left:8px;padding:6px 8px;font-size:12px">Çık</button></div>`;
     const mini = document.getElementById('mini-logout'); if (mini) mini.onclick = () => signOut(auth);
-    // start listening to friends
+    // start friends listener
     listenFriends(user.uid);
-    // optionally load pending friend requests filtered for me is handled by snapshot above (we already listen to all requests and filter by me)
+    // start notifications listener
+    listenNotifications(user.uid);
   } else {
     composerCard.style.display = 'none';
     userArea.textContent = 'Giriş yapılmadı';
     if (friendsUnsub) friendsUnsub();
     if (convUnsub) convUnsub();
+    if (notifUnsub) notifUnsub();
   }
 });
 
-/* ---------- Hide loading screen on page load ---------- */
-window.addEventListener("load", () => {
-  const scr = document.getElementById("loading-screen");
-  if (scr) setTimeout(() => scr.classList.add("fade-out"), 700);
+/* -----------------------------
+   Extra: small UX enhancements
+   - pressing Enter in dmInput sends message
+   - pressing Ctrl+Enter in txt-post posts
+   ----------------------------- */
+dmInput.addEventListener('keydown', ev => {
+  if (ev.key === 'Enter' && !ev.shiftKey) {
+    ev.preventDefault();
+    dmSend.click();
+  }
+});
+txtPost.addEventListener('keydown', ev => {
+  if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') {
+    ev.preventDefault();
+    btnPost.click();
+  }
 });
 
+/* -----------------------------
+   Hide loading screen once everything ready
+   ----------------------------- */
+window.addEventListener('load', () => {
+  if (loadingScreen) setTimeout(()=> loadingScreen.classList.add('fade-out'), 600);
+  // request notification permission proactively (non-blocking)
+  if ("Notification" in window && Notification.permission === "default") {
+    try { Notification.requestPermission().then(()=>{}); } catch(e){}
+  }
+});
+
+/* -----------------------------
+   OPTIONAL: utility to pre-populate some demo users/posts
+   (only for development; commented out by default)
+   ----------------------------- */
+/*
+async function seedDemo(){
+  // create demo users if not exist — careful, avoid spam in production
+  const existing = await getDocs(query(collection(db,'users'), limit(1)));
+  if (!existing.empty) return;
+  // create fake accounts using serverless approach — must use admin in real world
+  // This is intentionally left commented out.
+}
+*/
+
+/* --------------------------------------------------------------------
+   End of script.
+   -------------------------------------------------------------------- */
 </script>
 </body>
 </html>
-
